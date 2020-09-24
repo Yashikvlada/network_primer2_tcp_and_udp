@@ -47,6 +47,7 @@
             this.button_connect.TabIndex = 0;
             this.button_connect.Text = "Connect";
             this.button_connect.UseVisualStyleBackColor = true;
+            this.button_connect.Click += new System.EventHandler(this.button_connect_Click);
             // 
             // comboBox_currency
             // 
@@ -64,6 +65,7 @@
             this.button_ask.TabIndex = 2;
             this.button_ask.Text = "Ask server";
             this.button_ask.UseVisualStyleBackColor = true;
+            this.button_ask.Click += new System.EventHandler(this.button_ask_Click);
             // 
             // textBox_unswer
             // 
