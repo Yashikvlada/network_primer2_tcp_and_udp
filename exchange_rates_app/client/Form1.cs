@@ -25,6 +25,8 @@ namespace client
             var server_port = ConfigurationManager.AppSettings["server_port"].ToString();
 
             _clientApp = new Client(server_ip, server_port);
+
+            textBox_console.DataBindings.Add("Text", _clientApp, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
         }
 
         private void button_connect_Click(object sender, EventArgs e)
@@ -35,7 +37,12 @@ namespace client
         private void button_ask_Click(object sender, EventArgs e)
         {
             var str = _clientApp.AskServerForRates(Currency.EUR, Currency.USD);
-            MessageBox.Show(str);
+
+        }
+
+        private void button_disconnect_Click(object sender, EventArgs e)
+        {
+            _clientApp.CloseSocket();
         }
     }
 }
