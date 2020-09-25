@@ -125,7 +125,7 @@ namespace client
             {
                 Log += "Disconnected!";
                 _clientSocket.Close();
-            }       
+            }
         }
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {

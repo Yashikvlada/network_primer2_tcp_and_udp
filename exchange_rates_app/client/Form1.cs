@@ -36,8 +36,8 @@ namespace client
 
         private void button_ask_Click(object sender, EventArgs e)
         {
-            var str = _clientApp.AskServerForRates(Currency.EUR, Currency.USD);
-
+            textBox_answer.Text = 
+                _clientApp.AskServerForRates(Currency.EUR, Currency.USD);
         }
 
         private void button_disconnect_Click(object sender, EventArgs e)
