@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace server
 {
@@ -65,9 +66,43 @@ namespace server
         public void AcceptingThreadFunct()
         {
             var clientSocket = _serverSocket.AcceptTcpClient();
-            Log += clientSocket.Client.RemoteEndPoint.ToString();
-            ConnectedUsers.Add(clientSocket);           
+            Log += "Tryed to connect: " + clientSocket.Client.RemoteEndPoint.ToString();
+
+            try
+            {
+                bool auth = Authentication(clientSocket);
+
+                if (auth)
+                {
+                    Log += "Authentication succesfull: ";
+                    ConnectedUsers.Add(clientSocket);
+                    Receive(clientSocket);
+                }
+                else
+                {
+                    Log += "Authentication fail: ";
+                    clientSocket.Client.Disconnect(true);
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
         }
+        private void Receive(TcpClient client)
+        {
+            var ns = client.GetStream();
+            while (client.Connected)
+            {
+                var buff = new byte[1024];
+                int len = ns.Read(buff, 0, buff.Length);
+
+                if (len > 0)
+                    ns.Write(Encoding.Unicode.GetBytes("yes"),0,3);
+            }
+        }
+
         public void ClearLog()
         {
             Log = "Clear";
@@ -75,19 +110,16 @@ namespace server
 
         private bool Authentication(TcpClient clientSocket)
         {
-            using (NetworkStream ns = clientSocket.GetStream())
-            {
+            NetworkStream ns = clientSocket.GetStream();
+          
                 using(StreamReader sr=new StreamReader(ns))
                 {
                     string login = sr.ReadLine();
                     string pass = sr.ReadLine();
 
+                    ns.WriteByte(1);
                     return true;
-                }
-                
-
-            }
-
+                }               
             
         }
 
