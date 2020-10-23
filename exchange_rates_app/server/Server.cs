@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Threading;
 
 namespace server
 {
@@ -42,7 +43,7 @@ namespace server
         }
         public Server()
         {
-            ConnectedUsers = new List<TcpClient>();
+            ConnectedUsers = new List<TcpClient>();          
         }
         public void Listen(string ip, string port, int maxHosts)
         {
@@ -52,6 +53,7 @@ namespace server
                 _endPoint = new IPEndPoint(IPAddress.Parse(ip), int.Parse(port));
                 _serverSocket = new TcpListener(_endPoint);
                 _serverSocket.Start(maxHosts);
+                
 
                 Log += "Server started!";
 
@@ -65,6 +67,7 @@ namespace server
         }
         public void AcceptingThreadFunct()
         {
+
             var clientSocket = _serverSocket.AcceptTcpClient();
             Log += "Tryed to connect: " + clientSocket.Client.RemoteEndPoint.ToString();
 
@@ -75,7 +78,8 @@ namespace server
                 if (auth)
                 {
                     Log += "Authentication succesfull: ";
-                    ConnectedUsers.Add(clientSocket);
+                    Dispatcher.CurrentDispatcher.Invoke(() => ConnectedUsers.Add(clientSocket));
+
                     Receive(clientSocket);
                 }
                 else
@@ -95,11 +99,18 @@ namespace server
             var ns = client.GetStream();
             while (client.Connected)
             {
-                var buff = new byte[1024];
-                int len = ns.Read(buff, 0, buff.Length);
+                StreamReader sr = new StreamReader(ns, Encoding.Unicode);
 
-                if (len > 0)
-                    ns.Write(Encoding.Unicode.GetBytes("yes"),0,3);
+                var curr1 = sr.ReadLine();
+                var curr2 = sr.ReadLine();
+
+                if (curr1.Length != 0 && curr2.Length != 0)
+                {
+                    var answ = Encoding.Unicode.GetBytes("Yes!\n");
+                    Log += curr1 + " " + curr2 + " = " + answ;
+                    ns.Write(answ, 0, answ.Length);
+                }
+
             }
         }
 
@@ -110,26 +121,31 @@ namespace server
 
         private bool Authentication(TcpClient clientSocket)
         {
-            NetworkStream ns = clientSocket.GetStream();
-          
-                using(StreamReader sr=new StreamReader(ns))
-                {
-                    string login = sr.ReadLine();
-                    string pass = sr.ReadLine();
+            var ns = clientSocket.GetStream();
 
-                    ns.WriteByte(1);
-                    return true;
-                }               
-            
+            StreamReader sr = new StreamReader(ns, Encoding.Unicode);
+
+            string login = sr.ReadLine();
+            string pass = sr.ReadLine();
+
+            ns.WriteByte(1);
+            return true;
         }
-
+        public void StopListen()
+        {
+            if (_serverSocket == null)
+                return;
+            _serverSocket.Stop();
+        }
         public void CloseSocket()
         {
-            //if (_clientSocket != null && _clientSocket.Connected)
-            //{
-            //    Log += "Disconnected!";
-            //    _clientSocket.Close();
-            //}
+            if (_serverSocket == null)
+                return;
+
+            _serverSocket.Stop();
+            _serverSocket.Server.Close();
+
+            Log += "Disconnected!";
         }
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {

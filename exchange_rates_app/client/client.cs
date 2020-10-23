@@ -40,7 +40,8 @@ namespace client
         {
             try
             {
-                _endPoint = new IPEndPoint(IPAddress.Parse(ip), int.Parse(port));        
+                _endPoint = new IPEndPoint(IPAddress.Parse(ip), int.Parse(port));
+                _clientSocket = new TcpClient();
             }
             catch (Exception ex)
             {
@@ -51,8 +52,7 @@ namespace client
         {
             try
             {
-                CloseSocket();
-                _clientSocket = new TcpClient();
+                Disconnect();
                 _clientSocket.Connect(_endPoint);
 
                 Authentication(login, pass);
@@ -73,20 +73,17 @@ namespace client
             if (_clientSocket!=null && _clientSocket.Connected)
             try
             {
-                    using (NetworkStream ns = _clientSocket.GetStream())
-                    {
+                var ns = _clientSocket.GetStream();
+                    
+                var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString()+"\n");
+                ns.Write(curr1buff, 0, curr1buff.Length);
 
-                        var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString());
-                        ns.Write(curr1buff, 0, curr1buff.Length);
+                var curr2buff = Encoding.Unicode.GetBytes(curr2.ToString()+"\n");
+                ns.Write(curr2buff, 0, curr2buff.Length);
 
-                        var curr2buff = Encoding.Unicode.GetBytes(curr2.ToString());
-                        ns.Write(curr2buff, 0, curr2buff.Length);
-
-                        using (StreamReader sr = new StreamReader(ns))
-                        {
-                            result = sr.ReadLine();
-                        }
-                    }
+                StreamReader sr = new StreamReader(ns, Encoding.Unicode);
+                result = sr.ReadLine();              
+                    
             }
             catch (Exception ex)
             {
@@ -104,33 +101,25 @@ namespace client
 
         private bool Authentication(string login, string pass)
         {
-            NetworkStream ns = _clientSocket.GetStream();
+            var ns = _clientSocket.GetStream();
             
+            var loginBuff = Encoding.Unicode.GetBytes(login+"\n");
+            ns.Write(loginBuff, 0, loginBuff.Length);
 
-                var loginBuff = Encoding.Unicode.GetBytes(login+"\n");
-                ns.Write(loginBuff, 0, loginBuff.Length);
+            var passBuff = Encoding.Unicode.GetBytes(pass+"\n");
+            ns.Write(passBuff, 0, passBuff.Length);
 
-                var passBuff = Encoding.Unicode.GetBytes(pass+"\n");
-                ns.Write(passBuff, 0, passBuff.Length);
+            Log += "Connecting...";
 
-                //byte answBuff = new byte();
-                //ns.Read(answBuff, 0, 1024);
-                //Thread readThread = new Thread(new ParameterizedThreadStart(ReadThreadFunc));
-                //readThread.Start(ns);
+            var answ = ns.ReadByte();
 
-                Log += "Connecting...";
-
-                var answ = ns.ReadByte();
-
-                if (answ == 1)
-                    Log += "Succesfull authentification!";
-                else
-                {
-                    Log += "Failed authentification!";
-                    _clientSocket.Client.Disconnect(true);
-                }
-
-            
+            if (answ == 1)
+                Log += "Succesfull authentification!";
+            else
+            {
+                Log += "Failed authentification!";
+                this.Disconnect();
+            }
 
             return _clientSocket.Connected;
         }
@@ -139,13 +128,19 @@ namespace client
             var ns = o as NetworkStream;
         }
 
-        public void CloseSocket()
+        public void Disconnect()
         {
             if (_clientSocket != null && _clientSocket.Connected)
-            {
-                Log += "Disconnected!";
-                _clientSocket.Close();
-            }
+                _clientSocket.Client.Disconnect(true);
+        }
+        public void CloseSocket()
+        {
+            if (_clientSocket == null)
+                return;
+
+            Log += "Socket closed!";
+            _clientSocket.Close();
+
         }
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {

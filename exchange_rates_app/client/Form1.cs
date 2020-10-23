@@ -31,7 +31,14 @@ namespace client
             AddCurrencyToList(comboBox_curr1);
             AddCurrencyToList(comboBox_curr2);
 
+            this.FormClosed += Form_client_FormClosed;
         }
+
+        private void Form_client_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _clientApp.CloseSocket();
+        }
+
         private void AddCurrencyToList(ComboBox cb)
         {
             var items = Enum.GetNames(typeof(Currency));
@@ -76,7 +83,7 @@ namespace client
 
         private void button_disconnect_Click(object sender, EventArgs e)
         {
-            _clientApp.CloseSocket();
+            _clientApp.Disconnect();
         }
     }
 }

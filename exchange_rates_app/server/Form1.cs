@@ -19,6 +19,13 @@ namespace server
 
             _serverApp = new Server();
             textBox_console.DataBindings.Add("Text", _serverApp, "Log");
+
+            this.FormClosed += Form_server_FormClosed;
+        }
+
+        private void Form_server_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _serverApp.CloseSocket();
         }
 
         private void button_listen_Click(object sender, EventArgs e)

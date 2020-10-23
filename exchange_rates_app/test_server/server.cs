@@ -79,18 +79,21 @@ namespace test_server
             while (client!=null&&client.Connected)
             {
                 var ns = client.GetStream();
-              
-                StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-                string curr1 = sr.ReadLine();
-                string curr2 = sr.ReadLine();
 
-                if (curr1.Length != 0 && curr2.Length != 0)
+                using (StreamReader sr = new StreamReader(ns, Encoding.Unicode))
                 {
-                    Console.WriteLine("Converting...");
-                    var yesBuff = Encoding.Unicode.GetBytes("yes\n");
-                    ns.Write(yesBuff, 0, yesBuff.Length);
-                    //ns.Write(Encoding.Unicode.GetBytes("\n"), 0, 1);
+                    string curr1 = sr.ReadLine();
+                    string curr2 = sr.ReadLine();
+
+                    if (curr1.Length != 0 && curr2.Length != 0)
+                    {
+                        Console.WriteLine("Converting...");
+                        var yesBuff = Encoding.Unicode.GetBytes("yes\n");
+                        ns.Write(yesBuff, 0, yesBuff.Length);
+                        //ns.Write(Encoding.Unicode.GetBytes("\n"), 0, 1);
+                    }
                 }
+                            
             }
         }
         private bool Authentication(TcpClient clientSocket)
