@@ -42,5 +42,10 @@ namespace server
                 MessageBox.Show(ex.Message);
             }
         }
+
+        private void button_stop_Click(object sender, EventArgs e)
+        {
+            _serverApp.CloseSocket();
+        }
     }
 }

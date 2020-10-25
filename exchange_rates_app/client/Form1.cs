@@ -36,7 +36,7 @@ namespace client
 
         private void Form_client_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _clientApp.CloseSocket();
+            //_clientApp.CloseSocket();
         }
 
         private void AddCurrencyToList(ComboBox cb)
@@ -83,7 +83,7 @@ namespace client
 
         private void button_disconnect_Click(object sender, EventArgs e)
         {
-            _clientApp.Disconnect();
+            //_clientApp.Disconnect();
         }
     }
 }

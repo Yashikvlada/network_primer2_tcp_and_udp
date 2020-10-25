@@ -77,7 +77,7 @@ namespace server
 
                 if (auth)
                 {
-                    Log += "Authentication succesfull: ";
+                    Log += "Authentication succesfull!: ";
                     Dispatcher.CurrentDispatcher.Invoke(() => ConnectedUsers.Add(clientSocket));
 
                     Receive(clientSocket);
@@ -91,24 +91,35 @@ namespace server
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message);
+                clientSocket.Client.Disconnect(true);
             }
 
         }
         private void Receive(TcpClient client)
         {
             var ns = client.GetStream();
-            while (client.Connected)
+            StreamReader sr = new StreamReader(ns, Encoding.Unicode);
+            
+
+            while (client.Client.Connected)
             {
-                StreamReader sr = new StreamReader(ns, Encoding.Unicode);
+                string curr1 = string.Empty;
+                string curr2 = string.Empty;
 
-                var curr1 = sr.ReadLine();
-                var curr2 = sr.ReadLine();
-
+                if (client.Client.Poll(120, SelectMode.SelectRead)){
+                    curr1 = sr.ReadLine();
+                    curr2 = sr.ReadLine();
+                }
+             
                 if (curr1.Length != 0 && curr2.Length != 0)
                 {
                     var answ = Encoding.Unicode.GetBytes("Yes!\n");
-                    Log += curr1 + " " + curr2 + " = " + answ;
-                    ns.Write(answ, 0, answ.Length);
+                    if (client.Client.Poll(120, SelectMode.SelectWrite))
+                    {
+                        ns.Write(answ, 0, answ.Length);
+                        Log += "ANSW: " + curr1 + " " + curr2 + " = " + answ;
+                    }
+                 
                 }
 
             }

@@ -82,7 +82,8 @@ namespace client
                 ns.Write(curr2buff, 0, curr2buff.Length);
 
                 StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-                result = sr.ReadLine();              
+                    if(_clientSocket!=null)
+                        result = sr.ReadLine();              
                     
             }
             catch (Exception ex)
@@ -137,6 +138,8 @@ namespace client
         {
             if (_clientSocket == null)
                 return;
+
+            //Disconnect();
 
             Log += "Socket closed!";
             _clientSocket.Close();
