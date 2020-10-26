@@ -23,6 +23,7 @@ namespace server
     {
         private TcpListener _serverSocket;
         private IPEndPoint _endPoint;
+       
         private string _log;
 
         public List<TcpClient> ConnectedUsers { get; set; }
@@ -43,7 +44,8 @@ namespace server
         }
         public Server()
         {
-            ConnectedUsers = new List<TcpClient>();          
+            ConnectedUsers = new List<TcpClient>();
+            _serverSocket = null;
         }
         public void Listen(string ip, string port, int maxHosts)
         {
@@ -80,7 +82,7 @@ namespace server
                     Log += "Authentication succesfull!: ";
                     Dispatcher.CurrentDispatcher.Invoke(() => ConnectedUsers.Add(clientSocket));
 
-                    Receive(clientSocket);
+                    ReceiveLoop(clientSocket);
                 }
                 else
                 {
@@ -95,34 +97,43 @@ namespace server
             }
 
         }
-        private void Receive(TcpClient client)
+        private void ReceiveLoop(TcpClient client)
         {
             var ns = client.GetStream();
             StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-            
 
-            while (client.Client.Connected)
+            try
             {
-                string curr1 = string.Empty;
-                string curr2 = string.Empty;
-
-                if (client.Client.Poll(120, SelectMode.SelectRead)){
-                    curr1 = sr.ReadLine();
-                    curr2 = sr.ReadLine();
-                }
-             
-                if (curr1.Length != 0 && curr2.Length != 0)
+                while (client.Connected)
                 {
-                    var answ = Encoding.Unicode.GetBytes("Yes!\n");
-                    if (client.Client.Poll(120, SelectMode.SelectWrite))
-                    {
-                        ns.Write(answ, 0, answ.Length);
-                        Log += "ANSW: " + curr1 + " " + curr2 + " = " + answ;
-                    }
-                 
-                }
+                    string curr1 = string.Empty;
+                    string curr2 = string.Empty;
 
+                    if (client.Client.Poll(120, SelectMode.SelectRead))
+                    {
+                        curr1 = sr.ReadLine();
+                        curr2 = sr.ReadLine();
+                    }
+
+                    if (curr1.Length != 0 && curr2.Length != 0)
+                    {
+                        var answ = Encoding.Unicode.GetBytes("Yes!\n");
+                        if (client.Client.Poll(120, SelectMode.SelectWrite))
+                        {
+                            ns.Write(answ, 0, answ.Length);
+                            Log += "ANSW: " + curr1 + " " + curr2 + " = " + answ;
+                        }
+
+                    }
+
+                }
             }
+            finally
+            {
+                ns.Close();
+                client.Close();
+            }
+        
         }
 
         public void ClearLog()

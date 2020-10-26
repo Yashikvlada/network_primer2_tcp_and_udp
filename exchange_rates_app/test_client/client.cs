@@ -60,12 +60,10 @@ namespace test_client
                     NetworkStream ns = _clientSocket.GetStream();
                     
 
-                        var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString()+"\n");
+                        var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString()+ "::"+curr2.ToString());
                         ns.Write(curr1buff, 0, curr1buff.Length);
                         //ns.Write(Encoding.Unicode.GetBytes("\n"), 0, 1);
 
-                        var curr2buff = Encoding.Unicode.GetBytes(curr2.ToString()+"\n");
-                        ns.Write(curr2buff, 0, curr2buff.Length);
                         //ns.Write(Encoding.Unicode.GetBytes("\n"), 0, 1);
                     Console.WriteLine("Wait for answer...!");
                     using (StreamReader sr = new StreamReader(ns,Encoding.Unicode))

@@ -82,10 +82,11 @@ namespace test_server
 
                 using (StreamReader sr = new StreamReader(ns, Encoding.Unicode))
                 {
-                    string curr1 = sr.ReadLine();
-                    string curr2 = sr.ReadLine();
+                    //string curr1 = sr.ReadLine();
+                    //string curr2 = sr.ReadLine();
+                    string curr1 = ReadInfo(ns);
 
-                    if (curr1.Length != 0 && curr2.Length != 0)
+                    if (curr1.Length != 0)
                     {
                         Console.WriteLine("Converting...");
                         var yesBuff = Encoding.Unicode.GetBytes("yes\n");
@@ -95,6 +96,26 @@ namespace test_server
                 }
                             
             }
+        }
+        private string ReadInfo(NetworkStream ns)
+        {
+            Console.WriteLine("READDATDA");
+            List<byte> allBytes = new List<byte>();
+            while (ns.DataAvailable)
+            {
+                int i = 0;
+                byte[] buff = new byte[256];
+
+                i = ns.Read(buff, 0, buff.Length);
+                Console.WriteLine(i);
+                if (i <= 0)
+                    break;
+
+                allBytes.AddRange(buff.Take(i));
+            }
+            string res = Encoding.Unicode.GetString(allBytes.ToArray());
+            Console.WriteLine(res);
+            return res;
         }
         private bool Authentication(TcpClient clientSocket)
         {
