@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace client
     {
         private TcpClient _clientSocket;
         private IPEndPoint _endPoint;
+        private NetworkStream _stream;
         private string _log;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -41,56 +43,57 @@ namespace client
             try
             {
                 _endPoint = new IPEndPoint(IPAddress.Parse(ip), int.Parse(port));
-                _clientSocket = new TcpClient();
+                _clientSocket = null;
+                _stream = null;
             }
             catch (Exception ex)
             {
-                Log += ex.Message;
+                Log += "Создание соккета! " + ex.Message;
             }
         }
-        public bool Connect(string login, string pass)
+        public void Connect(string login, string pass)
         {
             try
             {
-                Disconnect();
+                CloseSocket();
+                _clientSocket = new TcpClient();
                 _clientSocket.Connect(_endPoint);
+                _stream = _clientSocket.GetStream();
+
+                Log += "Connected";
 
                 Authentication(login, pass);
-
-                //Log += "Connected";
+               
             }
             catch (Exception ex)
             {
                 Log += ex.Message;
             }
 
-            return _clientSocket.Connected;
         }
         public string AskServerForRates(Currency curr1, Currency curr2)
         {
             string result = "No answer";
             
-            if (_clientSocket!=null && _clientSocket.Connected)
+            if (_stream!=null)
             try
             {
-                var ns = _clientSocket.GetStream();
                     
                 var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString()+"\n");
-                ns.Write(curr1buff, 0, curr1buff.Length);
+                _stream.Write(curr1buff, 0, curr1buff.Length);
 
                 var curr2buff = Encoding.Unicode.GetBytes(curr2.ToString()+"\n");
-                ns.Write(curr2buff, 0, curr2buff.Length);
+                _stream.Write(curr2buff, 0, curr2buff.Length);
 
-                StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-                    if(_clientSocket!=null)
-                        result = sr.ReadLine();              
-                    
+                StreamReader sr = new StreamReader(_stream, Encoding.Unicode);
+                result = sr.ReadLine();
+
             }
             catch (Exception ex)
             {
                 result = ex.Message;
             }
-            result+= $"{curr1} - {curr2} : {result}";
+            result= $"{curr1} - {curr2} : {result}";
             Log += result;
             return result;
         }
@@ -102,47 +105,51 @@ namespace client
 
         private bool Authentication(string login, string pass)
         {
-            var ns = _clientSocket.GetStream();
             
             var loginBuff = Encoding.Unicode.GetBytes(login+"\n");
-            ns.Write(loginBuff, 0, loginBuff.Length);
+            if(_stream.CanWrite)
+                _stream.Write(loginBuff, 0, loginBuff.Length);
 
             var passBuff = Encoding.Unicode.GetBytes(pass+"\n");
-            ns.Write(passBuff, 0, passBuff.Length);
+            if(_stream.CanWrite)
+                _stream.Write(passBuff, 0, passBuff.Length);
 
-            Log += "Connecting...";
+            Log += "Checking login and pass...";
 
-            var answ = ns.ReadByte();
+            int answ = 0;
+            if (_stream.CanRead) { }
+                answ = _stream.ReadByte();
 
             if (answ == 1)
+            {
                 Log += "Succesfull authentification!";
+                return true;
+            }              
             else
             {
                 Log += "Failed authentification!";
-                this.Disconnect();
+                CloseSocket();
+                return false;
             }
 
-            return _clientSocket.Connected;
         }
         private void ReadThreadFunc(object o)
         {
             var ns = o as NetworkStream;
         }
 
-        public void Disconnect()
-        {
-            if (_clientSocket != null && _clientSocket.Connected)
-                _clientSocket.Client.Disconnect(true);
-        }
         public void CloseSocket()
         {
-            if (_clientSocket == null)
-                return;
+            _stream?.Close();
 
-            //Disconnect();
-
-            Log += "Socket closed!";
-            _clientSocket.Close();
+            if (_clientSocket != null)
+            {
+                _clientSocket.Close();
+                _clientSocket.Dispose();
+                _clientSocket = null;
+                Log += "Соккет очищен!";
+            }
+            
 
         }
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
