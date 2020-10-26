@@ -78,26 +78,49 @@ namespace client
             if (_stream!=null)
             try
             {
-                    
-                var curr1buff = Encoding.Unicode.GetBytes(curr1.ToString()+"\n");
-                _stream.Write(curr1buff, 0, curr1buff.Length);
+                
+                string quest = curr1.ToString() + "::" + curr2.ToString();
 
-                var curr2buff = Encoding.Unicode.GetBytes(curr2.ToString()+"\n");
-                _stream.Write(curr2buff, 0, curr2buff.Length);
+                WriteInfo(quest);
+                Log += "Отправлен запрос: " + quest;
 
-                StreamReader sr = new StreamReader(_stream, Encoding.Unicode);
-                result = sr.ReadLine();
-
+                result = ReadInfo();
+                Log += "Получен ответ: " + result;
             }
             catch (Exception ex)
             {
-                result = ex.Message;
+                Log+= ex.Message;
             }
             result= $"{curr1} - {curr2} : {result}";
-            Log += result;
+
             return result;
         }
 
+        private string ReadInfo()
+        {
+
+            List<byte> allBytes = new List<byte>();
+            while (_stream.DataAvailable)
+            {
+                int i = 0;
+                byte[] buff = new byte[256];
+
+                i = _stream.Read(buff, 0, buff.Length);
+
+                if (i <= 0)
+                    break;
+
+                allBytes.AddRange(buff.Take(i));
+            }
+            string res = Encoding.Unicode.GetString(allBytes.ToArray());
+
+            return res;
+        }
+        private void WriteInfo(string msg)
+        {
+            var buff = Encoding.Unicode.GetBytes(msg);
+            _stream.Write(buff, 0, buff.Length);
+        }
         public void ClearLog()
         {
             Log = "Clear";
@@ -106,21 +129,13 @@ namespace client
         private bool Authentication(string login, string pass)
         {
             
-            var loginBuff = Encoding.Unicode.GetBytes(login+"\n");
-            if(_stream.CanWrite)
-                _stream.Write(loginBuff, 0, loginBuff.Length);
-
-            var passBuff = Encoding.Unicode.GetBytes(pass+"\n");
-            if(_stream.CanWrite)
-                _stream.Write(passBuff, 0, passBuff.Length);
+            WriteInfo(login + "::" + pass);
 
             Log += "Checking login and pass...";
 
-            int answ = 0;
-            if (_stream.CanRead) { }
-                answ = _stream.ReadByte();
+            string answ = ReadInfo();
 
-            if (answ == 1)
+            if (answ == "1")
             {
                 Log += "Succesfull authentification!";
                 return true;

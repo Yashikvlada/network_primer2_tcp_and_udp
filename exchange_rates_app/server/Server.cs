@@ -100,32 +100,19 @@ namespace server
         private void ReceiveLoop(TcpClient client)
         {
             var ns = client.GetStream();
-            StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-
             try
             {
                 while (client.Connected)
                 {
-                    string curr1 = string.Empty;
-                    string curr2 = string.Empty;
+                    string msgFromClient = ReadInfo(ns);
 
-                    if (client.Client.Poll(120, SelectMode.SelectRead))
+                    if (msgFromClient.Length != 0)
                     {
-                        curr1 = sr.ReadLine();
-                        curr2 = sr.ReadLine();
+                        Log += "Получен запрос: " + msgFromClient;
+                        var answ = GenerateAnsw(msgFromClient);
+                        WriteInfo(ns, answ);
+                        Log += "Отправлен ответ: " + answ;
                     }
-
-                    if (curr1.Length != 0 && curr2.Length != 0)
-                    {
-                        var answ = Encoding.Unicode.GetBytes("Yes!\n");
-                        if (client.Client.Poll(120, SelectMode.SelectWrite))
-                        {
-                            ns.Write(answ, 0, answ.Length);
-                            Log += "ANSW: " + curr1 + " " + curr2 + " = " + answ;
-                        }
-
-                    }
-
                 }
             }
             finally
@@ -134,6 +121,35 @@ namespace server
                 client.Close();
             }
         
+        }
+        private string ReadInfo(NetworkStream ns)
+        {
+
+            List<byte> allBytes = new List<byte>();
+            while (ns.DataAvailable)
+            {
+                int i = 0;
+                byte[] buff = new byte[256];
+
+                i = ns.Read(buff, 0, buff.Length);
+                
+                if (i <= 0)
+                    break;
+
+                allBytes.AddRange(buff.Take(i));
+            }
+            string res = Encoding.Unicode.GetString(allBytes.ToArray());
+
+            return res;
+        }
+        private string GenerateAnsw(string msg)
+        {
+            return "YES";
+        }
+        private void WriteInfo(NetworkStream ns, string msg)
+        {
+            var buff = Encoding.Unicode.GetBytes(msg);
+            ns.Write(buff, 0, buff.Length);
         }
 
         public void ClearLog()
@@ -145,12 +161,9 @@ namespace server
         {
             var ns = clientSocket.GetStream();
 
-            StreamReader sr = new StreamReader(ns, Encoding.Unicode);
-
-            string login = sr.ReadLine();
-            string pass = sr.ReadLine();
-
-            ns.WriteByte(1);
+            string loginPass = ReadInfo(ns);
+            WriteInfo(ns, "1");
+            
             return true;
         }
         public void StopListen()
@@ -161,11 +174,22 @@ namespace server
         }
         public void CloseSocket()
         {
+            foreach (var s in ConnectedUsers)
+            {
+                s.Client.Disconnect(false);
+               
+                //s.GetStream().Close();                
+                s.Close();
+                
+            }
+
             if (_serverSocket == null)
                 return;
 
             _serverSocket.Stop();
             _serverSocket.Server.Close();
+            
+          
 
             Log += "Disconnected!";
         }
