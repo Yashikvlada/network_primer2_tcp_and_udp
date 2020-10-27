@@ -65,6 +65,7 @@ namespace test_server
                 sw?.Close();
                 sr?.Close();
                 TcpClient?.Close();
+                Console.WriteLine("Client connection is over!");
             }
 
         }
@@ -78,7 +79,7 @@ namespace test_server
             try
             {
                 listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 1024);
-                listener.Start(5);
+                listener.Start(1);
 
                 Console.WriteLine("Listening...");
 
@@ -92,6 +93,7 @@ namespace test_server
                     Thread clThread = new Thread(new ThreadStart(ch.StartClientLoop));
                     clThread.Start();
                 }
+                
             }
             catch(Exception ex)
             {
@@ -100,6 +102,7 @@ namespace test_server
             finally
             {
                 listener?.Stop();
+                Console.WriteLine("Listening is over!");
             }          
         }
     }
