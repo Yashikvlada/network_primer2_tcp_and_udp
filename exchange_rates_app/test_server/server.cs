@@ -23,37 +23,61 @@ namespace test_server
         private TcpClient _tcpClient;
         public static int MaxClients { get; set; }
         public static int CurrClients { get; set; }
+        public static List<ClientHandle> ConnectedClients { get; set; }
 
+        private NetworkStream _sw;
+        private StreamReader _sr;
         static ClientHandle()
         {
+            ConnectedClients = new List<ClientHandle>();
             MaxClients = 1;
             CurrClients = 0;
         }
         public ClientHandle(TcpClient client)
         {
             _tcpClient = client;
+            _sw = null;
+            _sr = null;
+
             ++CurrClients;
+            ConnectedClients.Add(this);
+        }
+        public void Close()
+        {
+            _sw?.Close();
+            _sr?.Close();
+            _tcpClient?.Close();
+            --CurrClients;
+            ConnectedClients.Remove(this);
+        }
+        public static void DisconnectAll()
+        {
+            if (ConnectedClients.Count == 0)
+                return;
+
+            for (int i = 0; i < ConnectedClients.Count; ++i)
+            {
+                ConnectedClients[i].Close();
+            }
         }
         public void StartClientLoop()
         {
             if (_tcpClient == null)
                 throw new NullReferenceException("Can`t start client loop! TcpClient is empty!");
 
-            NetworkStream sw = null;
-            StreamReader sr = null;
             try
             {
-                sw = _tcpClient.GetStream();
-                sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
+                _sw = _tcpClient.GetStream();
+                _sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
 
-                string msgFromClient = sr.ReadLine();
+                string msgFromClient = _sr.ReadLine();
                 string userName = msgFromClient;
 
                 Console.WriteLine($"Client: {userName} connected!");
 
                 while (true)
                 {
-                    msgFromClient = sr.ReadLine();
+                    msgFromClient = _sr.ReadLine();
 
                     if (msgFromClient.Contains("<QUIT>"))
                     {
@@ -65,7 +89,7 @@ namespace test_server
 
                     string answer = msgFromClient + "\r\n";
                     byte[] answBuff = Encoding.Unicode.GetBytes(answer);
-                    sw.Write(answBuff, 0, answBuff.Length);
+                    _sw.Write(answBuff, 0, answBuff.Length);
                 }
             }
             catch (Exception ex)
@@ -74,10 +98,7 @@ namespace test_server
             }
             finally
             {
-                sw?.Close();
-                sr?.Close();
-                _tcpClient?.Close();
-                --CurrClients;
+                Close();
                 Console.WriteLine("Client connection is over!");
             }
 
@@ -93,13 +114,18 @@ namespace test_server
             const int MAX_USERS = 2;
             const int PORT = 1024;
             const string IP_ADDR = "127.0.0.1";
+
             try
             {
                 listener = new TcpListener(IPAddress.Parse(IP_ADDR), PORT);
                 listener.Start(5);
                 ClientHandle.MaxClients = MAX_USERS;
+                
 
                 Console.WriteLine("Listening...");
+
+                Thread thr = new Thread(new ThreadStart(()=> { Thread.Sleep(10000);ClientHandle.DisconnectAll(); }));
+                thr.Start();
 
                 while (true)
                 {
