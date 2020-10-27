@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.IO.Ports;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -16,147 +17,92 @@ namespace test_server
     {
         USD, EUR, RUB, UAH
     }
-    public class Server
+
+    public class ClientHandle
     {
-        private TcpListener _serverSocket;
-        private IPEndPoint _endPoint;
+        public TcpClient TcpClient { get; set; }
 
-        public List<TcpClient> ConnectedUsers { get; set; }
-        public Server()
+        public void StartClientLoop()
         {
-            ConnectedUsers = new List<TcpClient>();
-            
-        }
-        public void Listen(string ip, string port, int maxHosts)
-        {
+            if (TcpClient == null)
+                throw new NullReferenceException("Can`t start client loop! TcpClient is empty!");
+
+            NetworkStream sw = null;
+            StreamReader sr = null;
             try
             {
-                //CloseSocket();
-                _endPoint = new IPEndPoint(IPAddress.Parse(ip), int.Parse(port));
-                _serverSocket = new TcpListener(_endPoint);
-                _serverSocket.Start(maxHosts);
+                sw = TcpClient.GetStream();
+                sr = new StreamReader(TcpClient.GetStream(), Encoding.Unicode);
 
-                Console.WriteLine("server started");
+                string msgFromClient = sr.ReadLine();
+                string userName = msgFromClient;
 
-                Thread acceptThread = new Thread(new ThreadStart(AcceptingThreadFunct));
-                acceptThread.Start();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
-        private void AcceptingThreadFunct()
-        {
-            Console.WriteLine("Waiting for accept...");
-            var clientSocket = _serverSocket.AcceptTcpClient();
-            Console.WriteLine("Tryed to connect: " + clientSocket.Client.RemoteEndPoint.ToString());
+                Console.WriteLine($"Client: {userName} connected!");
 
-            try
-            {
-                bool auth = Authentication(clientSocket);
-
-                if (auth)
+                while (true)
                 {
-                    Console.WriteLine("Authentication succesfull");
-                    ConnectedUsers.Add(clientSocket);
-                    Receive(clientSocket);
-                }
-                else
-                {
-                    Console.WriteLine("Authentication fail");
-                    //clientSocket.Client.Disconnect(true);
+                    msgFromClient = sr.ReadLine();
+
+                    if (msgFromClient.Contains("<QUIT>"))
+                    {
+                        Console.WriteLine($"Client: {userName} is disconnected!");
+                        break;
+                    }
+
+                    Console.WriteLine($"Client: {userName} : {msgFromClient}");
+
+                    string answer = msgFromClient + "\r\n";
+                    byte[] answBuff = Encoding.Unicode.GetBytes(answer);
+                    sw.Write(answBuff, 0, answBuff.Length);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-
-        }
-        private void Receive(TcpClient client)
-        {
-            while (client!=null&&client.Connected)
+            finally
             {
-                var ns = client.GetStream();
-
-                using (StreamReader sr = new StreamReader(ns, Encoding.Unicode))
-                {
-                    //string curr1 = sr.ReadLine();
-                    //string curr2 = sr.ReadLine();
-                    string curr1 = ReadInfo(ns);
-
-                    if (curr1.Length != 0)
-                    {
-                        Console.WriteLine("Converting...");
-                        var yesBuff = Encoding.Unicode.GetBytes("yes\n");
-                        ns.Write(yesBuff, 0, yesBuff.Length);
-                        //ns.Write(Encoding.Unicode.GetBytes("\n"), 0, 1);
-                    }
-                }
-                            
+                sw?.Close();
+                sr?.Close();
+                TcpClient?.Close();
             }
-        }
-        private string ReadInfo(NetworkStream ns)
-        {
-            Console.WriteLine("READDATDA");
-            List<byte> allBytes = new List<byte>();
-            while (ns.DataAvailable)
-            {
-                int i = 0;
-                byte[] buff = new byte[256];
-
-                i = ns.Read(buff, 0, buff.Length);
-                Console.WriteLine(i);
-                if (i <= 0)
-                    break;
-
-                allBytes.AddRange(buff.Take(i));
-            }
-            string res = Encoding.Unicode.GetString(allBytes.ToArray());
-            Console.WriteLine(res);
-            return res;
-        }
-        private bool Authentication(TcpClient clientSocket)
-        {
-            NetworkStream ns = clientSocket.GetStream();
-
-            StreamReader sr = new StreamReader(ns,Encoding.Unicode);
-                
-                    string login = sr.ReadLine();
-                    string pass = sr.ReadLine();
-
-                    Console.WriteLine(login + pass);
-                    Console.WriteLine(login.Length + ":" + pass.Length);
-
-                    if (login.Equals("1") && pass.Equals("1"))
-                    {
-                        ns.WriteByte(1);
-                        Console.WriteLine("auth succesfull");
-                        return true;
-                    }
-                    else
-                    {
-                        ns.WriteByte(0);
-                        Console.WriteLine("auth failed");
-                        return false;
-                    }
-                  
-                
-            
-        }
-
-        public void CloseSocket()
-        {
 
         }
     }
+
     class server
-    {   
+    {
         static void Main(string[] args)
         {
-            Server server = new Server();
-            server.Listen("127.0.0.1", "1024", 5);
+            TcpListener listener = null;
+            try
+            {
+                listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 1024);
+                listener.Start(5);
+
+                Console.WriteLine("Listening...");
+
+                while (true)
+                {
+                    TcpClient client = listener.AcceptTcpClient();
+
+                    ClientHandle ch = new ClientHandle();
+                    ch.TcpClient = client;
+
+                    Thread clThread = new Thread(new ThreadStart(ch.StartClientLoop));
+                    clThread.Start();
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                listener?.Stop();
+            }          
         }
     }
 }
+
+
