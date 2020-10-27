@@ -97,12 +97,21 @@ namespace server
             }
 
         }
+        private bool IsConnected(TcpClient client)
+        {
+            byte[] buff = new byte[1];
+
+            if (client.Client.Receive(buff, SocketFlags.Peek) == 0)
+                return false;
+            else
+                return true;
+        }
         private void ReceiveLoop(TcpClient client)
         {
             var ns = client.GetStream();
             try
             {
-                while (client.Connected)
+                while (IsConnected(client))
                 {
                     string msgFromClient = ReadInfo(ns);
 
@@ -114,6 +123,7 @@ namespace server
                         Log += "Отправлен ответ: " + answ;
                     }
                 }
+                Log += "Disconnected!";
             }
             finally
             {
@@ -124,7 +134,7 @@ namespace server
         }
         private string ReadInfo(NetworkStream ns)
         {
-
+            
             List<byte> allBytes = new List<byte>();
             while (ns.DataAvailable)
             {
