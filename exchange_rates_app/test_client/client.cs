@@ -24,7 +24,7 @@ namespace test_client
             TcpClient client = null;
             NetworkStream sw = null;
             StreamReader sr = null;
-
+            string msgToServer = string.Empty;
             try
             {
                 client = new TcpClient();
@@ -32,9 +32,7 @@ namespace test_client
 
                 sw = client.GetStream();
                 sr = new StreamReader(client.GetStream(), Encoding.Unicode);
-
-                string msgToServer = string.Empty;
-
+               
                 msgToServer = userName;
                 msgToServer += "\r\n";
 
@@ -63,7 +61,7 @@ namespace test_client
                 Console.WriteLine(ex.Message);
             }
             finally
-            {
+            {         
                 sr?.Close();
                 sw?.Close();
                 client?.Close();

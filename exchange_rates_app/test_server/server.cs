@@ -20,19 +20,31 @@ namespace test_server
 
     public class ClientHandle
     {
-        public TcpClient TcpClient { get; set; }
+        private TcpClient _tcpClient;
+        public static int MaxClients { get; set; }
+        public static int CurrClients { get; set; }
 
+        static ClientHandle()
+        {
+            MaxClients = 1;
+            CurrClients = 0;
+        }
+        public ClientHandle(TcpClient client)
+        {
+            _tcpClient = client;
+            ++CurrClients;
+        }
         public void StartClientLoop()
         {
-            if (TcpClient == null)
+            if (_tcpClient == null)
                 throw new NullReferenceException("Can`t start client loop! TcpClient is empty!");
 
             NetworkStream sw = null;
             StreamReader sr = null;
             try
             {
-                sw = TcpClient.GetStream();
-                sr = new StreamReader(TcpClient.GetStream(), Encoding.Unicode);
+                sw = _tcpClient.GetStream();
+                sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
 
                 string msgFromClient = sr.ReadLine();
                 string userName = msgFromClient;
@@ -64,7 +76,8 @@ namespace test_server
             {
                 sw?.Close();
                 sr?.Close();
-                TcpClient?.Close();
+                _tcpClient?.Close();
+                --CurrClients;
                 Console.WriteLine("Client connection is over!");
             }
 
@@ -76,22 +89,29 @@ namespace test_server
         static void Main(string[] args)
         {
             TcpListener listener = null;
+            List<TcpClient> connectedUsers = new List<TcpClient>();
+            const int MAX_USERS = 2;
+            const int PORT = 1024;
+            const string IP_ADDR = "127.0.0.1";
             try
             {
-                listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 1024);
-                listener.Start(1);
+                listener = new TcpListener(IPAddress.Parse(IP_ADDR), PORT);
+                listener.Start(5);
+                ClientHandle.MaxClients = MAX_USERS;
 
                 Console.WriteLine("Listening...");
 
                 while (true)
                 {
-                    TcpClient client = listener.AcceptTcpClient();
+                    if (ClientHandle.MaxClients > ClientHandle.CurrClients)
+                    {
+                        TcpClient client = listener.AcceptTcpClient();
 
-                    ClientHandle ch = new ClientHandle();
-                    ch.TcpClient = client;
+                        ClientHandle clHandle = new ClientHandle(client);
 
-                    Thread clThread = new Thread(new ThreadStart(ch.StartClientLoop));
-                    clThread.Start();
+                        Thread clThread = new Thread(new ThreadStart(clHandle.StartClientLoop));
+                        clThread.Start();
+                    }            
                 }
                 
             }
