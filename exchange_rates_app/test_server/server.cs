@@ -18,47 +18,38 @@ namespace test_server
         USD, EUR, RUB, UAH
     }
 
-    public class ClientHandle
+    internal class ClientHandle
     {
         private TcpClient _tcpClient;
-        public static int MaxClients { get; set; }
-        public static int CurrClients { get; set; }
-        public static List<ClientHandle> ConnectedClients { get; set; }
+        private ServerSide _server;
 
         private NetworkStream _sw;
         private StreamReader _sr;
-        static ClientHandle()
-        {
-            ConnectedClients = new List<ClientHandle>();
-            MaxClients = 1;
-            CurrClients = 0;
-        }
-        public ClientHandle(TcpClient client)
+        private string _userName;
+        private bool _isActive;
+        public ClientHandle(TcpClient client, ServerSide server)
         {
             _tcpClient = client;
+            _server = server;
             _sw = null;
             _sr = null;
+            _isActive = true;
 
-            ++CurrClients;
-            ConnectedClients.Add(this);
+            ++_server.CurrClCount;
+            _server.ConnectedUsers.Add(this);
         }
-        public void Close()
+        public void Disconnect()
+        {
+            _isActive = false;
+        }
+        private void Close()
         {
             _sw?.Close();
             _sr?.Close();
-            _tcpClient?.Close();
-            --CurrClients;
-            ConnectedClients.Remove(this);
-        }
-        public static void DisconnectAll()
-        {
-            if (ConnectedClients.Count == 0)
-                return;
 
-            for (int i = 0; i < ConnectedClients.Count; ++i)
-            {
-                ConnectedClients[i].Close();
-            }
+            _tcpClient?.Close();
+            --_server.CurrClCount;
+            _server.ConnectedUsers.Remove(this);
         }
         public void StartClientLoop()
         {
@@ -71,21 +62,21 @@ namespace test_server
                 _sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
 
                 string msgFromClient = _sr.ReadLine();
-                string userName = msgFromClient;
+                _userName = msgFromClient;
 
-                Console.WriteLine($"Client: {userName} connected!");
+                Console.WriteLine($"Client: {_userName} connected!");
 
-                while (true)
+                while (_isActive)
                 {
                     msgFromClient = _sr.ReadLine();
 
                     if (msgFromClient.Contains("<QUIT>"))
                     {
-                        Console.WriteLine($"Client: {userName} is disconnected!");
+                        Console.WriteLine($"Client: {_userName} is disconnected!");
                         break;
                     }
 
-                    Console.WriteLine($"Client: {userName} : {msgFromClient}");
+                    Console.WriteLine($"Client: {_userName} : {msgFromClient}");
 
                     string answer = msgFromClient + "\r\n";
                     byte[] answBuff = Encoding.Unicode.GetBytes(answer);
@@ -99,46 +90,73 @@ namespace test_server
             finally
             {
                 Close();
-                Console.WriteLine("Client connection is over!");
+                Console.WriteLine($"Client {_userName} connection is over! Connected: {_server.CurrClCount}");
             }
 
         }
     }
+    internal class ServerSide
+    {
+        private TcpListener _listener;
 
+        public List<ClientHandle> ConnectedUsers { get; set; }
+        private int _maxClCount;
+        public int CurrClCount { get; set; }
+        
+        public ServerSide(IPEndPoint ep, int maxClCount)
+        {
+            _listener = new TcpListener(ep);
+            ConnectedUsers = new List<ClientHandle>();
+            _maxClCount = maxClCount;
+            CurrClCount = 0;
+        }
+        public void StartListen()
+        {
+            _listener?.Start();
+
+            while (true)
+            {
+                if (_maxClCount > CurrClCount)
+                {
+                    TcpClient client = _listener.AcceptTcpClient();
+
+                    ClientHandle clHandle = new ClientHandle(client, this);
+
+                    Thread clThread = new Thread(new ThreadStart(clHandle.StartClientLoop));
+                    clThread.Start();
+                }
+            }
+        }
+        private void DisconnectAll()
+        {
+            if (ConnectedUsers.Count == 0)
+                return;
+
+            for (int i = 0; i < ConnectedUsers.Count; ++i)
+            {
+                ConnectedUsers[i].Disconnect();
+            }
+        }
+        public void StopServer()
+        {
+            DisconnectAll();
+            _listener?.Stop();
+        }
+
+    }
     class server
     {
+
         static void Main(string[] args)
         {
-            TcpListener listener = null;
-            List<TcpClient> connectedUsers = new List<TcpClient>();
-            const int MAX_USERS = 2;
-            const int PORT = 1024;
-            const string IP_ADDR = "127.0.0.1";
+            ServerSide server = null;
 
             try
             {
-                listener = new TcpListener(IPAddress.Parse(IP_ADDR), PORT);
-                listener.Start(5);
-                ClientHandle.MaxClients = MAX_USERS;
-                
-
+                IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1024);
+                server = new ServerSide(ep, 2);
                 Console.WriteLine("Listening...");
-
-                Thread thr = new Thread(new ThreadStart(()=> { Thread.Sleep(10000);ClientHandle.DisconnectAll(); }));
-                thr.Start();
-
-                while (true)
-                {
-                    if (ClientHandle.MaxClients > ClientHandle.CurrClients)
-                    {
-                        TcpClient client = listener.AcceptTcpClient();
-
-                        ClientHandle clHandle = new ClientHandle(client);
-
-                        Thread clThread = new Thread(new ThreadStart(clHandle.StartClientLoop));
-                        clThread.Start();
-                    }            
-                }
+                server.StartListen();
                 
             }
             catch(Exception ex)
@@ -147,8 +165,8 @@ namespace test_server
             }
             finally
             {
-                listener?.Stop();
-                Console.WriteLine("Listening is over!");
+                server.StopServer();
+                Console.WriteLine("Server is over!");
             }          
         }
     }
