@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -102,13 +103,41 @@ namespace test_server
         public List<ClientHandle> ConnectedUsers { get; set; }
         private int _maxClCount;
         public int CurrClCount { get; set; }
-        
+        private Dictionary<string, float> _rates;
+
         public ServerSide(IPEndPoint ep, int maxClCount)
         {
+            _rates = new Dictionary<string, float>();
+
             _listener = new TcpListener(ep);
             ConnectedUsers = new List<ClientHandle>();
             _maxClCount = maxClCount;
             CurrClCount = 0;
+        }
+
+        /// <summary>
+        /// Считываем .txt файл с курсами валют (USD:1\nEUR:0,8\nRUB:70)
+        /// </summary>
+        public void LoadRates(string ratesFile)
+        {
+            try
+            {
+                using (StreamReader sr = new StreamReader(ratesFile))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        var info = sr.ReadLine().Split(':');
+                        string currName = info[0];
+                        float currRate = float.Parse(info[1]);
+
+                        _rates.Add(currName, currRate);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new ApplicationException($"Cant't get rates! [{ex.Message}]");
+            }
         }
         public void StartListen()
         {
@@ -155,6 +184,10 @@ namespace test_server
             {
                 IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1024);
                 server = new ServerSide(ep, 2);
+
+                Console.WriteLine("Read rates...");
+                server.LoadRates("rates.txt");
+
                 Console.WriteLine("Listening...");
                 server.StartListen();
                 
