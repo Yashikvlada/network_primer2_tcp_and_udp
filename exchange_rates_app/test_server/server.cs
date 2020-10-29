@@ -15,11 +15,6 @@ using System.Threading.Tasks;
 
 namespace test_server
 {
-    public enum Currency
-    {
-        USD, EUR, RUB, UAH
-    }
-
     internal class ClientHandle
     {
         private TcpClient _tcpClient;
@@ -86,6 +81,21 @@ namespace test_server
 
             return true;
         }
+        private bool CheckMaxClients(string login)
+        {
+            byte[] answBuff;
+            if (_server.CurrClCount>_server.MaxClCount)
+            {
+                Console.WriteLine($"User: {_tcpClient.Client.RemoteEndPoint} denied (already max clients)!");
+                answBuff = Encoding.Unicode.GetBytes($"Server is not available. Try to connect later pls!\r\n");
+                _sw.Write(answBuff, 0, answBuff.Length);
+                return false;
+            }
+            answBuff = Encoding.Unicode.GetBytes($"Server is available!\r\n");
+            _sw.Write(answBuff, 0, answBuff.Length);
+
+            return true;
+        }
         public void StartClientLoop()
         {
             if (_tcpClient == null)
@@ -96,9 +106,12 @@ namespace test_server
                 _sw = _tcpClient.GetStream();
                 _sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
                 //
+                if (!CheckMaxClients(_userName))
+                    return;
+
                 _userName = _sr.ReadLine();
                 string pass = _sr.ReadLine();
-
+             
                 if (!CheckLoginPass(_userName, pass))
                     return;
                 if (!CheckBlockList(_userName))
@@ -148,7 +161,9 @@ namespace test_server
             finally
             {
                 Close();
-                Console.WriteLine($"Client {_userName} connection is over! Connected: {_server.CurrClCount}");
+                if(_server.MaxClCount>_server.CurrClCount)
+                    Console.WriteLine($"Client {_userName} " +
+                        $"connection is over! Connected: {_server.CurrClCount}");
             }
 
         }
@@ -156,8 +171,7 @@ namespace test_server
     internal class ServerSide
     {
         private TcpListener _listener;
-        // максимум одновременно подключенных
-        private int _maxClCount;
+        
         // словарь валюта:курс к доллару (напр.: EUR:0,8)
         private Dictionary<string, float> _rates;
 
@@ -165,6 +179,8 @@ namespace test_server
         public List<ClientHandle> ConnectedUsers { get; set; }        
         // сколько сейчас подключено
         public int CurrClCount { get; set; }
+        // максимум одновременно подключенных
+        public int MaxClCount { get; }
         // база логинов и паролей
         public Dictionary<string, string> UsersBase { get; set; }
         // пользователи, которые превысили лимит запросов
@@ -177,7 +193,7 @@ namespace test_server
         public ServerSide(IPEndPoint ep, int maxClCount, int maxRequests, int blockTime)
         {
             _listener = new TcpListener(ep);
-            _maxClCount = maxClCount;
+            MaxClCount = maxClCount;
             CurrClCount = 0;
             MaxRequests = maxRequests;
             BlockTime = blockTime;
@@ -218,15 +234,15 @@ namespace test_server
 
             while (true)
             {
-                if (_maxClCount > CurrClCount)
-                {
+                //if (_maxClCount > CurrClCount)
+                //{
                     TcpClient client = _listener.AcceptTcpClient();
-
+                    
                     ClientHandle clHandle = new ClientHandle(client, this);
 
                     Thread clThread = new Thread(new ThreadStart(clHandle.StartClientLoop));
                     clThread.Start();
-                }
+                //}
             }
         }
         public void StopServer()
@@ -308,7 +324,7 @@ namespace test_server
                 IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1024);
                 server = new ServerSide(
                     /*ip+port                = */ ep, 
-                    /*max clients            = */ 2,
+                    /*max clients            = */ 1,
                     /*max request till block = */ 4, 
                     /*block time sec         = */ 60);
 

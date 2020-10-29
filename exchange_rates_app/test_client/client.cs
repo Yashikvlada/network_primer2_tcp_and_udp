@@ -9,10 +9,6 @@ using System.Threading.Tasks;
 
 namespace test_client
 {
-    public enum Currency
-    {
-        USD, EUR, RUB, UAH
-    }
     internal class ClientSide{
 
         private string _userName;
@@ -26,6 +22,11 @@ namespace test_client
         }
         private bool Auth(string login, string pass)
         {
+            var servAvailble = _sr.ReadLine();
+            Console.WriteLine(servAvailble);
+            if (servAvailble.Contains("Server is not available"))
+                return false;
+
             var loginBuff = Encoding.Unicode.GetBytes(login + "\r\n");
             var passBuff = Encoding.Unicode.GetBytes(pass + "\r\n");
             _sw.Write(loginBuff, 0, loginBuff.Length);
@@ -46,7 +47,9 @@ namespace test_client
         public void Start(IPEndPoint ep, string login, string pass)
         {
             _userName = login;
+            Console.WriteLine("Trying to connect...");
             _client.Connect(ep);
+            
 
             _sw = _client.GetStream();
             _sr = new StreamReader(_client.GetStream(), Encoding.Unicode);
