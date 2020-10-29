@@ -106,18 +106,18 @@ namespace test_server
           
                 Console.WriteLine($"User: {_userName} connected!");
                 //
-                string msgFromClient = string.Empty;
                 byte[] answBuff;
 
                 while (_isActive)
                 {                    
-                    msgFromClient = _sr.ReadLine();
+                    string curr1 = _sr.ReadLine();
+                    string curr2 = _sr.ReadLine();
 
-                    if (msgFromClient.Contains("<QUIT>"))
-                    {
-                        Console.WriteLine($"Client: {_userName} is disconnected!");
-                        break;
-                    }
+                    //if (msgFromClient.Contains("<QUIT>"))
+                    //{
+                    //    Console.WriteLine($"Client: {_userName} is disconnected!");
+                    //    break;
+                    //}
 
                     if (_requestsCount >= _server.MaxRequests)
                     {
@@ -132,12 +132,13 @@ namespace test_server
                         break;
                     }
 
-                    Console.WriteLine($"Client: {_userName} : {msgFromClient}");
+                    Console.WriteLine($"Client: {_userName} : {curr1} to {curr2}");
 
-                    string answer = msgFromClient + "\r\n";
-                    answBuff = Encoding.Unicode.GetBytes(answer);
+                    string answer = _server.CalcRates(curr1, curr2);
+                    answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
                     _sw.Write(answBuff, 0, answBuff.Length);
                     ++_requestsCount;
+                    Console.WriteLine($"Answer: {curr1} - {curr2} : {answer}");
                 }
             }
             catch (Exception ex)
@@ -270,16 +271,17 @@ namespace test_server
             return false;
             
         }
-        public string CalcRates(float curr1, float curr2)
+        public string CalcRates(string curr1, string curr2)
         {
-            string result = string.Empty;
 
-            if (curr1 == 0)
-                result = "WRONG SOURCE RATE";
+            if(!_rates.ContainsKey(curr1)||!_rates.ContainsKey(curr2))
+                return "WRONG RATE NAME";
+
+            if (_rates[curr1] == 0)
+                return "WRONG SOURCE RATE";
             else
-                result = (curr2 / curr1).ToString();
+                return (_rates[curr2] / _rates[curr1]).ToString();
 
-            return result;
         }
         private void DisconnectAll()
         {

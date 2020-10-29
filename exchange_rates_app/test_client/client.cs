@@ -54,20 +54,21 @@ namespace test_client
             if (!Auth(login, pass))
                 return;
 
-            byte[] msgBuff;
-            string msgToServer = string.Empty;
-
             while (true)
             {
-                Console.Write($"{_userName} : ");
-                msgToServer = Console.ReadLine();
-                msgToServer += "\r\n";
+                Console.Write($"{_userName} curr1: ");
+                string curr1 = Console.ReadLine();
+                Console.Write($"{_userName} curr2: ");
+                string curr2 = Console.ReadLine();
 
-                msgBuff = Encoding.Unicode.GetBytes(msgToServer);
-                _sw.Write(msgBuff, 0, msgBuff.Length);
+                byte[] curr1Buff = Encoding.Unicode.GetBytes(curr1+"\r\n");
+                _sw.Write(curr1Buff, 0, curr1Buff.Length);
 
-                if (msgToServer.Contains("<QUIT>"))
-                    break;
+                byte[] curr2Buff = Encoding.Unicode.GetBytes(curr2 + "\r\n");
+                _sw.Write(curr2Buff, 0, curr2Buff.Length);
+
+                //if (msgToServer.Contains("<QUIT>"))
+                //    break;
 
                 string msgFromServer = _sr.ReadLine();
                 Console.WriteLine($"Answer from server: {msgFromServer}");
