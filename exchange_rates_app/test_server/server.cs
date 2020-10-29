@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ namespace test_server
         private StreamReader _sr;
         private string _userName;
         private bool _isActive;
+        private int _requestsCount;
         public ClientHandle(TcpClient client, ServerSide server)
         {
             _tcpClient = client;
@@ -35,6 +37,7 @@ namespace test_server
             _sw = null;
             _sr = null;
             _isActive = true;
+            _requestsCount = 0;
 
             ++_server.CurrClCount;
             _server.ConnectedUsers.Add(this);
@@ -52,6 +55,37 @@ namespace test_server
             --_server.CurrClCount;
             _server.ConnectedUsers.Remove(this);
         }
+        private bool CheckLoginPass(string login, string pass)
+        {
+            byte[] answBuff;
+            Console.WriteLine($"User: {login} connecting...!");
+            if (!_server.IsLoginPassOk(login, pass))
+            {
+                Console.WriteLine($"User: {login} wrong password or login!");
+                answBuff = Encoding.Unicode.GetBytes("Wrong password or login!\r\n");
+                _sw.Write(answBuff, 0, answBuff.Length);
+                return false;
+            }
+            answBuff = Encoding.Unicode.GetBytes("Password checked!\r\n");
+            _sw.Write(answBuff, 0, answBuff.Length);
+            return true;
+        }
+        private bool CheckBlockList(string login)
+        {
+            byte[] answBuff;
+            if (_server.IsUserInBlockList(login))
+            {
+                Console.WriteLine($"User: {login} in block list!");
+                var timeExpired = _server.BlockedUsers[login];
+                answBuff = Encoding.Unicode.GetBytes($"You are in block list [{timeExpired}]!\r\n");
+                _sw.Write(answBuff, 0, answBuff.Length);
+                return false;
+            }
+            answBuff = Encoding.Unicode.GetBytes($"Server is ready to work. Enter request pls!\r\n");
+            _sw.Write(answBuff, 0, answBuff.Length);
+
+            return true;
+        }
         public void StartClientLoop()
         {
             if (_tcpClient == null)
@@ -61,14 +95,22 @@ namespace test_server
             {
                 _sw = _tcpClient.GetStream();
                 _sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
+                //
+                _userName = _sr.ReadLine();
+                string pass = _sr.ReadLine();
 
-                string msgFromClient = _sr.ReadLine();
-                _userName = msgFromClient;
-
-                Console.WriteLine($"Client: {_userName} connected!");
+                if (!CheckLoginPass(_userName, pass))
+                    return;
+                if (!CheckBlockList(_userName))
+                    return;
+          
+                Console.WriteLine($"User: {_userName} connected!");
+                //
+                string msgFromClient = string.Empty;
+                byte[] answBuff;
 
                 while (_isActive)
-                {
+                {                    
                     msgFromClient = _sr.ReadLine();
 
                     if (msgFromClient.Contains("<QUIT>"))
@@ -77,11 +119,25 @@ namespace test_server
                         break;
                     }
 
+                    if (_requestsCount >= _server.MaxRequests)
+                    {
+                        DateTime expire = DateTime.Now.AddSeconds(_server.BlockTime);
+                        string limit = $"Client: {_userName} requests {_requestsCount} / {_server.MaxRequests}. " +
+                            $"Blocked till: {expire}!";
+
+                        Console.WriteLine(limit);
+                        answBuff = Encoding.Unicode.GetBytes(limit+"\r\n");
+                        _sw.Write(answBuff, 0, answBuff.Length);
+                        _server.BlockedUsers.Add(_userName, expire);
+                        break;
+                    }
+
                     Console.WriteLine($"Client: {_userName} : {msgFromClient}");
 
                     string answer = msgFromClient + "\r\n";
-                    byte[] answBuff = Encoding.Unicode.GetBytes(answer);
+                    answBuff = Encoding.Unicode.GetBytes(answer);
                     _sw.Write(answBuff, 0, answBuff.Length);
+                    ++_requestsCount;
                 }
             }
             catch (Exception ex)
@@ -99,20 +155,36 @@ namespace test_server
     internal class ServerSide
     {
         private TcpListener _listener;
-
-        public List<ClientHandle> ConnectedUsers { get; set; }
+        // максимум одновременно подключенных
         private int _maxClCount;
-        public int CurrClCount { get; set; }
+        // словарь валюта:курс к доллару (напр.: EUR:0,8)
         private Dictionary<string, float> _rates;
 
-        public ServerSide(IPEndPoint ep, int maxClCount)
-        {
-            _rates = new Dictionary<string, float>();
+        // все кто сейчас подключены
+        public List<ClientHandle> ConnectedUsers { get; set; }        
+        // сколько сейчас подключено
+        public int CurrClCount { get; set; }
+        // база логинов и паролей
+        public Dictionary<string, string> UsersBase { get; set; }
+        // пользователи, которые превысили лимит запросов
+        public Dictionary<string,DateTime> BlockedUsers { get; set; }
+        //макс количество запросов до блокировки
+        public int MaxRequests { get;}
+        // продолжительность блокировки (сек)
+        public int BlockTime { get; }
 
+        public ServerSide(IPEndPoint ep, int maxClCount, int maxRequests, int blockTime)
+        {
             _listener = new TcpListener(ep);
-            ConnectedUsers = new List<ClientHandle>();
             _maxClCount = maxClCount;
             CurrClCount = 0;
+            MaxRequests = maxRequests;
+            BlockTime = blockTime;
+
+            ConnectedUsers = new List<ClientHandle>();
+            _rates = new Dictionary<string, float>();
+            UsersBase = new Dictionary<string, string>();
+            BlockedUsers = new Dictionary<string, DateTime>();
         }
 
         /// <summary>
@@ -156,6 +228,59 @@ namespace test_server
                 }
             }
         }
+        public void StopServer()
+        {
+            DisconnectAll();
+            _listener?.Stop();
+        }
+        public bool AddUserToBase(string login, string pass)
+        {
+            if (UsersBase.ContainsKey(login))
+                return false;
+
+            UsersBase.Add(login, pass);
+            return true;
+        }
+        public bool RemoveUserFromBase(string login)
+        {
+            if (!UsersBase.ContainsKey(login))
+                return false;
+
+            UsersBase.Remove(login);
+            return true;
+        }     
+        public bool IsLoginPassOk(string login, string pass)
+        {
+            if (UsersBase.ContainsKey(login))
+                return UsersBase[login].Equals(pass);
+
+            return false;
+        }
+        public bool IsUserInBlockList(string login)
+        {
+            if (!BlockedUsers.ContainsKey(login))
+                return false;
+                        
+            DateTime expire = BlockedUsers[login];
+
+            if (expire >= DateTime.Now)
+                return true;
+
+            BlockedUsers.Remove(login);
+            return false;
+            
+        }
+        public string CalcRates(float curr1, float curr2)
+        {
+            string result = string.Empty;
+
+            if (curr1 == 0)
+                result = "WRONG SOURCE RATE";
+            else
+                result = (curr2 / curr1).ToString();
+
+            return result;
+        }
         private void DisconnectAll()
         {
             if (ConnectedUsers.Count == 0)
@@ -166,11 +291,7 @@ namespace test_server
                 ConnectedUsers[i].Disconnect();
             }
         }
-        public void StopServer()
-        {
-            DisconnectAll();
-            _listener?.Stop();
-        }
+
 
     }
     class server
@@ -183,12 +304,17 @@ namespace test_server
             try
             {
                 IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1024);
-                server = new ServerSide(ep, 2);
+                server = new ServerSide(
+                    /*ip+port                = */ ep, 
+                    /*max clients            = */ 2,
+                    /*max request till block = */ 4, 
+                    /*block time sec         = */ 60);
 
                 Console.WriteLine("Read rates...");
                 server.LoadRates("rates.txt");
 
                 Console.WriteLine("Listening...");
+                server.UsersBase.Add("yv", "0000");
                 server.StartListen();
                 
             }

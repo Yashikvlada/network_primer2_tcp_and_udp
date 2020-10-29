@@ -24,20 +24,38 @@ namespace test_client
             
             _client = new TcpClient();
         }
-        public void Start(IPEndPoint ep, string userName)
+        private bool Auth(string login, string pass)
         {
-            _userName = userName;
-            string msgToServer = string.Empty;
+            var loginBuff = Encoding.Unicode.GetBytes(login + "\r\n");
+            var passBuff = Encoding.Unicode.GetBytes(pass + "\r\n");
+            _sw.Write(loginBuff, 0, loginBuff.Length);
+            _sw.Write(passBuff, 0, passBuff.Length);
+
+            string answ = _sr.ReadLine();
+            Console.WriteLine(answ);
+            if (answ.Contains("Wrong password"))
+                return false;
+
+            answ = _sr.ReadLine();
+            Console.WriteLine(answ);
+            if (answ.Contains("You are in block list"))
+                return false;
+
+            return true;
+        }
+        public void Start(IPEndPoint ep, string login, string pass)
+        {
+            _userName = login;
             _client.Connect(ep);
 
             _sw = _client.GetStream();
             _sr = new StreamReader(_client.GetStream(), Encoding.Unicode);
 
-            msgToServer = _userName;
-            msgToServer += "\r\n";
+            if (!Auth(login, pass))
+                return;
 
-            byte[] msgBuff = Encoding.Unicode.GetBytes(msgToServer);
-            _sw.Write(msgBuff, 0, msgBuff.Length);
+            byte[] msgBuff;
+            string msgToServer = string.Empty;
 
             while (true)
             {
@@ -66,15 +84,15 @@ namespace test_client
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Enter UserName:");
-            string userName = Console.ReadLine();
+            string login = "yv";
+            string pass = "0000";
 
             ClientSide client = null;
             try
             {
                 client = new ClientSide();
                 IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"),1024);
-                client.Start(ep, userName);
+                client.Start(ep, login, pass);
             }
             catch(Exception ex)
             {
