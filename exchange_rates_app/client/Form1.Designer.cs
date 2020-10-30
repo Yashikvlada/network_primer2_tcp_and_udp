@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.button_connect = new System.Windows.Forms.Button();
-            this.comboBox_curr1 = new System.Windows.Forms.ComboBox();
             this.button_ask = new System.Windows.Forms.Button();
             this.textBox_answer = new System.Windows.Forms.TextBox();
             this.button_disconnect = new System.Windows.Forms.Button();
@@ -38,7 +37,8 @@
             this.textBox_login = new System.Windows.Forms.TextBox();
             this.textBox_password = new System.Windows.Forms.TextBox();
             this.textBox_console = new System.Windows.Forms.TextBox();
-            this.comboBox_curr2 = new System.Windows.Forms.ComboBox();
+            this.textBox_curr1 = new System.Windows.Forms.TextBox();
+            this.textBox_curr2 = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // button_connect
@@ -51,15 +51,6 @@
             this.button_connect.Text = "Connect";
             this.button_connect.UseVisualStyleBackColor = true;
             this.button_connect.Click += new System.EventHandler(this.button_connect_Click);
-            // 
-            // comboBox_curr1
-            // 
-            this.comboBox_curr1.FormattingEnabled = true;
-            this.comboBox_curr1.Location = new System.Drawing.Point(140, 189);
-            this.comboBox_curr1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.comboBox_curr1.Name = "comboBox_curr1";
-            this.comboBox_curr1.Size = new System.Drawing.Size(86, 28);
-            this.comboBox_curr1.TabIndex = 1;
             // 
             // button_ask
             // 
@@ -145,21 +136,29 @@
             this.textBox_console.Size = new System.Drawing.Size(474, 524);
             this.textBox_console.TabIndex = 9;
             // 
-            // comboBox_curr2
+            // textBox_curr1
             // 
-            this.comboBox_curr2.FormattingEnabled = true;
-            this.comboBox_curr2.Location = new System.Drawing.Point(239, 189);
-            this.comboBox_curr2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.comboBox_curr2.Name = "comboBox_curr2";
-            this.comboBox_curr2.Size = new System.Drawing.Size(86, 28);
-            this.comboBox_curr2.TabIndex = 10;
+            this.textBox_curr1.Location = new System.Drawing.Point(137, 193);
+            this.textBox_curr1.Name = "textBox_curr1";
+            this.textBox_curr1.Size = new System.Drawing.Size(80, 26);
+            this.textBox_curr1.TabIndex = 10;
+            this.textBox_curr1.Text = "RUB";
+            // 
+            // textBox_curr2
+            // 
+            this.textBox_curr2.Location = new System.Drawing.Point(223, 193);
+            this.textBox_curr2.Name = "textBox_curr2";
+            this.textBox_curr2.Size = new System.Drawing.Size(80, 26);
+            this.textBox_curr2.TabIndex = 11;
+            this.textBox_curr2.Text = "EUR";
             // 
             // Form_client
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(860, 566);
-            this.Controls.Add(this.comboBox_curr2);
+            this.Controls.Add(this.textBox_curr2);
+            this.Controls.Add(this.textBox_curr1);
             this.Controls.Add(this.textBox_console);
             this.Controls.Add(this.textBox_password);
             this.Controls.Add(this.textBox_login);
@@ -168,7 +167,6 @@
             this.Controls.Add(this.button_disconnect);
             this.Controls.Add(this.textBox_answer);
             this.Controls.Add(this.button_ask);
-            this.Controls.Add(this.comboBox_curr1);
             this.Controls.Add(this.button_connect);
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.Name = "Form_client";
@@ -181,7 +179,6 @@
         #endregion
 
         private System.Windows.Forms.Button button_connect;
-        private System.Windows.Forms.ComboBox comboBox_curr1;
         private System.Windows.Forms.Button button_ask;
         private System.Windows.Forms.TextBox textBox_answer;
         private System.Windows.Forms.Button button_disconnect;
@@ -190,7 +187,8 @@
         private System.Windows.Forms.TextBox textBox_login;
         private System.Windows.Forms.TextBox textBox_password;
         private System.Windows.Forms.TextBox textBox_console;
-        private System.Windows.Forms.ComboBox comboBox_curr2;
+        private System.Windows.Forms.TextBox textBox_curr1;
+        private System.Windows.Forms.TextBox textBox_curr2;
     }
 }
 

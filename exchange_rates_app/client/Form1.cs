@@ -16,7 +16,6 @@ namespace client
 {    
     public partial class Form_client : Form
     {
-        private Client _clientApp;
 
         public Form_client()
         {
@@ -24,66 +23,29 @@ namespace client
             var server_ip = ConfigurationManager.AppSettings["server_ip"].ToString();
             var server_port = ConfigurationManager.AppSettings["server_port"].ToString();
 
-            _clientApp = new Client(server_ip, server_port);
-
-            textBox_console.DataBindings.Add("Text", _clientApp, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
-
-            AddCurrencyToList(comboBox_curr1);
-            AddCurrencyToList(comboBox_curr2);
+            //textBox_console.DataBindings.Add("Text", _clientApp, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
 
             this.FormClosed += Form_client_FormClosed;
         }
 
         private void Form_client_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _clientApp.CloseSocket();
+
         }
 
-        private void AddCurrencyToList(ComboBox cb)
-        {
-            var items = Enum.GetNames(typeof(Currency));
-            cb.Items.AddRange(items);
-        }
         private void button_connect_Click(object sender, EventArgs e)
         {
-            if(textBox_login.Equals(string.Empty) &&
-                textBox_password.Equals(string.Empty))
-            {
 
-                MessageBox.Show("Enter login and pass pls!");
-                return;
-            }
-
-            try
-            {
-                _clientApp.Connect("ivan", "ivanov");
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
         }
 
         private void button_ask_Click(object sender, EventArgs e)
         {
             
-            try
-            {
-                Currency curr1 = (Currency)Enum.Parse(typeof(Currency), comboBox_curr1.Text);
-                Currency curr2 = (Currency)Enum.Parse(typeof(Currency), comboBox_curr2.Text);
-
-                textBox_answer.Text =
-                    _clientApp.AskServerForRates(curr1, curr2);
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
         }
 
         private void button_disconnect_Click(object sender, EventArgs e)
         {
-            _clientApp.CloseSocket();
+
         }
     }
 }
