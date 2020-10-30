@@ -25,7 +25,17 @@ namespace client
         private StreamReader _sr;
         private bool _isConnected;
 
-        public bool IsConnected { get => _isConnected; }
+        public bool IsConnected { 
+            get => _isConnected;
+            set
+            {
+                if (value != _isConnected)
+                {
+                    _isConnected = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
         public string Log
         {
             get => _log;
@@ -71,8 +81,7 @@ namespace client
         {
             try
             {
-                _client = new TcpClient();
-                _isConnected = true;
+                _client = new TcpClient();                
 
                 _userName = login;
                 Log += "Trying to connect...";
@@ -83,6 +92,8 @@ namespace client
 
                 if (!Auth(login, pass))
                     this.Close();
+
+                IsConnected = true;
             }
             catch(Exception ex)
             {
@@ -106,14 +117,14 @@ namespace client
             }
             catch(Exception ex)
             {
-                Log += ex.Message;
+                Log += "Can't get answer!";
                 this.Close();
             }
             return msgFromServer;
         }
         public void Close()
         {
-            _isConnected = false;
+            IsConnected = false;
             _sr?.Close();
             _sw?.Close();
 

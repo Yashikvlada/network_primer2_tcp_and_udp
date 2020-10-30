@@ -30,7 +30,13 @@ namespace client
                 _endPoint = new IPEndPoint(IPAddress.Parse(server_ip), int.Parse(server_port));
 
                 _client = new ClientSide();
+
                 textBox_console.DataBindings.Add("Text", _client, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
+                button_ask.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+                button_disconnect.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+                textBox_curr1.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+                textBox_curr2.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+                
             }
             catch (Exception ex)
             {
@@ -52,13 +58,20 @@ namespace client
             var login = textBox_login.Text;
             var pass = textBox_password.Text;
 
-            if (login == null || pass == null)
+            if (login == string.Empty || pass == string.Empty)
             {
                 MessageBox.Show("Enter login and pass pls!");
                 return;
             }
-            Task.Run(new Action(() => { 
+            var connTask = Task.Run(new Action(() => { 
             _client.Start(_endPoint, login, pass);
+            }));
+            button_connect.Enabled = false;
+            Task.Run(new Action(() =>
+            {
+                while (connTask.Status == TaskStatus.Running);
+                button_connect.Enabled = !_client.IsConnected;
+
             }));
   
         }
@@ -68,7 +81,7 @@ namespace client
             string curr1 = textBox_curr1.Text;
             string curr2 = textBox_curr2.Text;
 
-            if (curr1 == null || curr2 == null)
+            if (curr1 == string.Empty || curr2 == string.Empty)
             {
                 MessageBox.Show("Enter curr1 and curr2 pls!");
                 return;
