@@ -31,22 +31,29 @@
             this.button_listen = new System.Windows.Forms.Button();
             this.textBox_console = new System.Windows.Forms.TextBox();
             this.button_stop = new System.Windows.Forms.Button();
-            this.listBox_waiting_users = new System.Windows.Forms.ListBox();
+            this.listBox_blockUsr = new System.Windows.Forms.ListBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage_all_userts = new System.Windows.Forms.TabPage();
+            this.tabPage_allUsr = new System.Windows.Forms.TabPage();
             this.Delete = new System.Windows.Forms.Button();
             this.button_add = new System.Windows.Forms.Button();
-            this.listBox_all_users = new System.Windows.Forms.ListBox();
-            this.tabPage_waiting_users = new System.Windows.Forms.TabPage();
-            this.tabPage_connected_users = new System.Windows.Forms.TabPage();
-            this.listBox_connected_users = new System.Windows.Forms.ListBox();
+            this.listBox_allUsr = new System.Windows.Forms.ListBox();
+            this.tabPage_BlockUsr = new System.Windows.Forms.TabPage();
+            this.tabPage_connUsr = new System.Windows.Forms.TabPage();
+            this.listBox_connUsr = new System.Windows.Forms.ListBox();
             this.textBox_ip = new System.Windows.Forms.TextBox();
             this.textBox_port = new System.Windows.Forms.TextBox();
             this.textBox_maxClients = new System.Windows.Forms.TextBox();
+            this.label_ip = new System.Windows.Forms.Label();
+            this.label_port = new System.Windows.Forms.Label();
+            this.label_maxClients = new System.Windows.Forms.Label();
+            this.label_maxReq = new System.Windows.Forms.Label();
+            this.textBox_maxReq = new System.Windows.Forms.TextBox();
+            this.label_blockTime = new System.Windows.Forms.Label();
+            this.textBox_blockTime = new System.Windows.Forms.TextBox();
             this.tabControl1.SuspendLayout();
-            this.tabPage_all_userts.SuspendLayout();
-            this.tabPage_waiting_users.SuspendLayout();
-            this.tabPage_connected_users.SuspendLayout();
+            this.tabPage_allUsr.SuspendLayout();
+            this.tabPage_BlockUsr.SuspendLayout();
+            this.tabPage_connUsr.SuspendLayout();
             this.SuspendLayout();
             // 
             // button_listen
@@ -83,21 +90,21 @@
             this.button_stop.UseVisualStyleBackColor = true;
             this.button_stop.Click += new System.EventHandler(this.button_stop_Click);
             // 
-            // listBox_waiting_users
+            // listBox_blockUsr
             // 
-            this.listBox_waiting_users.FormattingEnabled = true;
-            this.listBox_waiting_users.ItemHeight = 20;
-            this.listBox_waiting_users.Location = new System.Drawing.Point(22, 26);
-            this.listBox_waiting_users.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.listBox_waiting_users.Name = "listBox_waiting_users";
-            this.listBox_waiting_users.Size = new System.Drawing.Size(432, 564);
-            this.listBox_waiting_users.TabIndex = 4;
+            this.listBox_blockUsr.FormattingEnabled = true;
+            this.listBox_blockUsr.ItemHeight = 20;
+            this.listBox_blockUsr.Location = new System.Drawing.Point(22, 26);
+            this.listBox_blockUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.listBox_blockUsr.Name = "listBox_blockUsr";
+            this.listBox_blockUsr.Size = new System.Drawing.Size(432, 564);
+            this.listBox_blockUsr.TabIndex = 4;
             // 
             // tabControl1
             // 
-            this.tabControl1.Controls.Add(this.tabPage_all_userts);
-            this.tabControl1.Controls.Add(this.tabPage_waiting_users);
-            this.tabControl1.Controls.Add(this.tabPage_connected_users);
+            this.tabControl1.Controls.Add(this.tabPage_allUsr);
+            this.tabControl1.Controls.Add(this.tabPage_BlockUsr);
+            this.tabControl1.Controls.Add(this.tabPage_connUsr);
             this.tabControl1.Location = new System.Drawing.Point(680, 18);
             this.tabControl1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabControl1.Name = "tabControl1";
@@ -105,19 +112,19 @@
             this.tabControl1.Size = new System.Drawing.Size(490, 655);
             this.tabControl1.TabIndex = 6;
             // 
-            // tabPage_all_userts
+            // tabPage_allUsr
             // 
-            this.tabPage_all_userts.Controls.Add(this.Delete);
-            this.tabPage_all_userts.Controls.Add(this.button_add);
-            this.tabPage_all_userts.Controls.Add(this.listBox_all_users);
-            this.tabPage_all_userts.Location = new System.Drawing.Point(4, 29);
-            this.tabPage_all_userts.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_all_userts.Name = "tabPage_all_userts";
-            this.tabPage_all_userts.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_all_userts.Size = new System.Drawing.Size(482, 622);
-            this.tabPage_all_userts.TabIndex = 0;
-            this.tabPage_all_userts.Text = "All users";
-            this.tabPage_all_userts.UseVisualStyleBackColor = true;
+            this.tabPage_allUsr.Controls.Add(this.Delete);
+            this.tabPage_allUsr.Controls.Add(this.button_add);
+            this.tabPage_allUsr.Controls.Add(this.listBox_allUsr);
+            this.tabPage_allUsr.Location = new System.Drawing.Point(4, 29);
+            this.tabPage_allUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_allUsr.Name = "tabPage_allUsr";
+            this.tabPage_allUsr.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_allUsr.Size = new System.Drawing.Size(482, 622);
+            this.tabPage_allUsr.TabIndex = 0;
+            this.tabPage_allUsr.Text = "All users";
+            this.tabPage_allUsr.UseVisualStyleBackColor = true;
             // 
             // Delete
             // 
@@ -139,53 +146,53 @@
             this.button_add.Text = "Add user";
             this.button_add.UseVisualStyleBackColor = true;
             // 
-            // listBox_all_users
+            // listBox_allUsr
             // 
-            this.listBox_all_users.FormattingEnabled = true;
-            this.listBox_all_users.ItemHeight = 20;
-            this.listBox_all_users.Location = new System.Drawing.Point(9, 9);
-            this.listBox_all_users.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.listBox_all_users.Name = "listBox_all_users";
-            this.listBox_all_users.Size = new System.Drawing.Size(458, 504);
-            this.listBox_all_users.TabIndex = 6;
+            this.listBox_allUsr.FormattingEnabled = true;
+            this.listBox_allUsr.ItemHeight = 20;
+            this.listBox_allUsr.Location = new System.Drawing.Point(9, 9);
+            this.listBox_allUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.listBox_allUsr.Name = "listBox_allUsr";
+            this.listBox_allUsr.Size = new System.Drawing.Size(458, 504);
+            this.listBox_allUsr.TabIndex = 6;
             // 
-            // tabPage_waiting_users
+            // tabPage_BlockUsr
             // 
-            this.tabPage_waiting_users.Controls.Add(this.listBox_waiting_users);
-            this.tabPage_waiting_users.Location = new System.Drawing.Point(4, 29);
-            this.tabPage_waiting_users.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_waiting_users.Name = "tabPage_waiting_users";
-            this.tabPage_waiting_users.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_waiting_users.Size = new System.Drawing.Size(482, 622);
-            this.tabPage_waiting_users.TabIndex = 1;
-            this.tabPage_waiting_users.Text = "Waiting users";
-            this.tabPage_waiting_users.UseVisualStyleBackColor = true;
+            this.tabPage_BlockUsr.Controls.Add(this.listBox_blockUsr);
+            this.tabPage_BlockUsr.Location = new System.Drawing.Point(4, 29);
+            this.tabPage_BlockUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_BlockUsr.Name = "tabPage_BlockUsr";
+            this.tabPage_BlockUsr.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_BlockUsr.Size = new System.Drawing.Size(482, 622);
+            this.tabPage_BlockUsr.TabIndex = 1;
+            this.tabPage_BlockUsr.Text = "Blocked users";
+            this.tabPage_BlockUsr.UseVisualStyleBackColor = true;
             // 
-            // tabPage_connected_users
+            // tabPage_connUsr
             // 
-            this.tabPage_connected_users.Controls.Add(this.listBox_connected_users);
-            this.tabPage_connected_users.Location = new System.Drawing.Point(4, 29);
-            this.tabPage_connected_users.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_connected_users.Name = "tabPage_connected_users";
-            this.tabPage_connected_users.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage_connected_users.Size = new System.Drawing.Size(482, 622);
-            this.tabPage_connected_users.TabIndex = 2;
-            this.tabPage_connected_users.Text = "Connected users";
-            this.tabPage_connected_users.UseVisualStyleBackColor = true;
+            this.tabPage_connUsr.Controls.Add(this.listBox_connUsr);
+            this.tabPage_connUsr.Location = new System.Drawing.Point(4, 29);
+            this.tabPage_connUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_connUsr.Name = "tabPage_connUsr";
+            this.tabPage_connUsr.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabPage_connUsr.Size = new System.Drawing.Size(482, 622);
+            this.tabPage_connUsr.TabIndex = 2;
+            this.tabPage_connUsr.Text = "Connected users";
+            this.tabPage_connUsr.UseVisualStyleBackColor = true;
             // 
-            // listBox_connected_users
+            // listBox_connUsr
             // 
-            this.listBox_connected_users.FormattingEnabled = true;
-            this.listBox_connected_users.ItemHeight = 20;
-            this.listBox_connected_users.Location = new System.Drawing.Point(9, 9);
-            this.listBox_connected_users.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.listBox_connected_users.Name = "listBox_connected_users";
-            this.listBox_connected_users.Size = new System.Drawing.Size(439, 484);
-            this.listBox_connected_users.TabIndex = 4;
+            this.listBox_connUsr.FormattingEnabled = true;
+            this.listBox_connUsr.ItemHeight = 20;
+            this.listBox_connUsr.Location = new System.Drawing.Point(9, 9);
+            this.listBox_connUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.listBox_connUsr.Name = "listBox_connUsr";
+            this.listBox_connUsr.Size = new System.Drawing.Size(439, 484);
+            this.listBox_connUsr.TabIndex = 4;
             // 
             // textBox_ip
             // 
-            this.textBox_ip.Location = new System.Drawing.Point(18, 194);
+            this.textBox_ip.Location = new System.Drawing.Point(18, 227);
             this.textBox_ip.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.textBox_ip.Name = "textBox_ip";
             this.textBox_ip.Size = new System.Drawing.Size(202, 26);
@@ -194,7 +201,7 @@
             // 
             // textBox_port
             // 
-            this.textBox_port.Location = new System.Drawing.Point(18, 234);
+            this.textBox_port.Location = new System.Drawing.Point(18, 297);
             this.textBox_port.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.textBox_port.Name = "textBox_port";
             this.textBox_port.Size = new System.Drawing.Size(202, 26);
@@ -203,18 +210,88 @@
             // 
             // textBox_maxClients
             // 
-            this.textBox_maxClients.Location = new System.Drawing.Point(18, 274);
+            this.textBox_maxClients.Location = new System.Drawing.Point(18, 372);
             this.textBox_maxClients.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.textBox_maxClients.Name = "textBox_maxClients";
             this.textBox_maxClients.Size = new System.Drawing.Size(202, 26);
             this.textBox_maxClients.TabIndex = 9;
-            this.textBox_maxClients.Text = "1";
+            this.textBox_maxClients.Text = "2";
+            // 
+            // label_ip
+            // 
+            this.label_ip.AutoSize = true;
+            this.label_ip.Location = new System.Drawing.Point(18, 197);
+            this.label_ip.Name = "label_ip";
+            this.label_ip.Size = new System.Drawing.Size(21, 20);
+            this.label_ip.TabIndex = 10;
+            this.label_ip.Text = "ip";
+            // 
+            // label_port
+            // 
+            this.label_port.AutoSize = true;
+            this.label_port.Location = new System.Drawing.Point(18, 271);
+            this.label_port.Name = "label_port";
+            this.label_port.Size = new System.Drawing.Size(37, 20);
+            this.label_port.TabIndex = 11;
+            this.label_port.Text = "port";
+            // 
+            // label_maxClients
+            // 
+            this.label_maxClients.AutoSize = true;
+            this.label_maxClients.Location = new System.Drawing.Point(18, 347);
+            this.label_maxClients.Name = "label_maxClients";
+            this.label_maxClients.Size = new System.Drawing.Size(87, 20);
+            this.label_maxClients.TabIndex = 12;
+            this.label_maxClients.Text = "max clients";
+            // 
+            // label_maxReq
+            // 
+            this.label_maxReq.AutoSize = true;
+            this.label_maxReq.Location = new System.Drawing.Point(18, 429);
+            this.label_maxReq.Name = "label_maxReq";
+            this.label_maxReq.Size = new System.Drawing.Size(104, 20);
+            this.label_maxReq.TabIndex = 14;
+            this.label_maxReq.Text = "max requests";
+            // 
+            // textBox_maxReq
+            // 
+            this.textBox_maxReq.Location = new System.Drawing.Point(18, 454);
+            this.textBox_maxReq.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.textBox_maxReq.Name = "textBox_maxReq";
+            this.textBox_maxReq.Size = new System.Drawing.Size(202, 26);
+            this.textBox_maxReq.TabIndex = 13;
+            this.textBox_maxReq.Text = "5";
+            // 
+            // label_blockTime
+            // 
+            this.label_blockTime.AutoSize = true;
+            this.label_blockTime.Location = new System.Drawing.Point(18, 509);
+            this.label_blockTime.Name = "label_blockTime";
+            this.label_blockTime.Size = new System.Drawing.Size(119, 20);
+            this.label_blockTime.TabIndex = 16;
+            this.label_blockTime.Text = "block time (sec)";
+            // 
+            // textBox_blockTime
+            // 
+            this.textBox_blockTime.Location = new System.Drawing.Point(18, 534);
+            this.textBox_blockTime.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.textBox_blockTime.Name = "textBox_blockTime";
+            this.textBox_blockTime.Size = new System.Drawing.Size(202, 26);
+            this.textBox_blockTime.TabIndex = 15;
+            this.textBox_blockTime.Text = "60";
             // 
             // Form_server
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1200, 692);
+            this.Controls.Add(this.label_blockTime);
+            this.Controls.Add(this.textBox_blockTime);
+            this.Controls.Add(this.label_maxReq);
+            this.Controls.Add(this.textBox_maxReq);
+            this.Controls.Add(this.label_maxClients);
+            this.Controls.Add(this.label_port);
+            this.Controls.Add(this.label_ip);
             this.Controls.Add(this.textBox_maxClients);
             this.Controls.Add(this.textBox_port);
             this.Controls.Add(this.textBox_ip);
@@ -226,9 +303,9 @@
             this.Name = "Form_server";
             this.Text = "Server";
             this.tabControl1.ResumeLayout(false);
-            this.tabPage_all_userts.ResumeLayout(false);
-            this.tabPage_waiting_users.ResumeLayout(false);
-            this.tabPage_connected_users.ResumeLayout(false);
+            this.tabPage_allUsr.ResumeLayout(false);
+            this.tabPage_BlockUsr.ResumeLayout(false);
+            this.tabPage_connUsr.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -239,18 +316,25 @@
         private System.Windows.Forms.Button button_listen;
         private System.Windows.Forms.TextBox textBox_console;
         private System.Windows.Forms.Button button_stop;
-        private System.Windows.Forms.ListBox listBox_waiting_users;
+        private System.Windows.Forms.ListBox listBox_blockUsr;
         private System.Windows.Forms.TabControl tabControl1;
-        private System.Windows.Forms.TabPage tabPage_all_userts;
+        private System.Windows.Forms.TabPage tabPage_allUsr;
         private System.Windows.Forms.Button Delete;
         private System.Windows.Forms.Button button_add;
-        private System.Windows.Forms.ListBox listBox_all_users;
-        private System.Windows.Forms.TabPage tabPage_waiting_users;
-        private System.Windows.Forms.TabPage tabPage_connected_users;
-        private System.Windows.Forms.ListBox listBox_connected_users;
+        private System.Windows.Forms.ListBox listBox_allUsr;
+        private System.Windows.Forms.TabPage tabPage_BlockUsr;
+        private System.Windows.Forms.TabPage tabPage_connUsr;
+        private System.Windows.Forms.ListBox listBox_connUsr;
         private System.Windows.Forms.TextBox textBox_ip;
         private System.Windows.Forms.TextBox textBox_port;
         private System.Windows.Forms.TextBox textBox_maxClients;
+        private System.Windows.Forms.Label label_ip;
+        private System.Windows.Forms.Label label_port;
+        private System.Windows.Forms.Label label_maxClients;
+        private System.Windows.Forms.Label label_maxReq;
+        private System.Windows.Forms.TextBox textBox_maxReq;
+        private System.Windows.Forms.Label label_blockTime;
+        private System.Windows.Forms.TextBox textBox_blockTime;
     }
 }
 
