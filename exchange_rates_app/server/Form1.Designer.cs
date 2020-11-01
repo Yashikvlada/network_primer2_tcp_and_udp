@@ -195,6 +195,7 @@
             this.textBox_ip.Location = new System.Drawing.Point(18, 227);
             this.textBox_ip.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.textBox_ip.Name = "textBox_ip";
+            this.textBox_ip.ReadOnly = true;
             this.textBox_ip.Size = new System.Drawing.Size(202, 26);
             this.textBox_ip.TabIndex = 7;
             this.textBox_ip.Text = "127.0.0.1";
@@ -204,6 +205,7 @@
             this.textBox_port.Location = new System.Drawing.Point(18, 297);
             this.textBox_port.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.textBox_port.Name = "textBox_port";
+            this.textBox_port.ReadOnly = true;
             this.textBox_port.Size = new System.Drawing.Size(202, 26);
             this.textBox_port.TabIndex = 8;
             this.textBox_port.Text = "1024";
@@ -216,6 +218,7 @@
             this.textBox_maxClients.Size = new System.Drawing.Size(202, 26);
             this.textBox_maxClients.TabIndex = 9;
             this.textBox_maxClients.Text = "2";
+            this.textBox_maxClients.TextChanged += new System.EventHandler(this.textBox_maxClients_TextChanged);
             // 
             // label_ip
             // 
@@ -261,6 +264,7 @@
             this.textBox_maxReq.Size = new System.Drawing.Size(202, 26);
             this.textBox_maxReq.TabIndex = 13;
             this.textBox_maxReq.Text = "5";
+            this.textBox_maxReq.TextChanged += new System.EventHandler(this.textBox_maxReq_TextChanged);
             // 
             // label_blockTime
             // 
@@ -279,6 +283,7 @@
             this.textBox_blockTime.Size = new System.Drawing.Size(202, 26);
             this.textBox_blockTime.TabIndex = 15;
             this.textBox_blockTime.Text = "60";
+            this.textBox_blockTime.TextChanged += new System.EventHandler(this.textBox_blockTime_TextChanged);
             // 
             // Form_server
             // 
