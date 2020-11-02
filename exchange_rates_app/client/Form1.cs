@@ -31,12 +31,7 @@ namespace client
 
                 _client = new ClientSide();
 
-                textBox_console.DataBindings.Add("Text", _client, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
-                button_ask.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
-                button_disconnect.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
-                textBox_curr1.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
-                textBox_curr2.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
-                
+                SetBindings();               
             }
             catch (Exception ex)
             {
@@ -47,7 +42,25 @@ namespace client
 
             this.FormClosed += Form_client_FormClosed;
         }
-
+        private void SetBindings()
+        {
+            // байндим консоль
+            textBox_console.DataBindings.Add("Text", _client, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
+            //байндим контролы на прямое значение (если IsConnected true, то и контрол true)
+            button_ask.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+            button_disconnect.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+            textBox_curr1.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+            textBox_curr2.DataBindings.Add("Enabled", _client, "IsConnected", false, DataSourceUpdateMode.OnPropertyChanged);
+            //байндим контролы на обратное значение
+            Binding connBind = new Binding("Enabled", _client, "IsConnected");
+            connBind.Parse += ReverseBoolProperty;
+            connBind.Format += ReverseBoolProperty;
+            button_connect.DataBindings.Add(connBind);
+        }
+        private void ReverseBoolProperty(object s, ConvertEventArgs e)
+        {
+            e.Value = !(bool)e.Value;
+        }
         private void Form_client_FormClosed(object sender, FormClosedEventArgs e)
         {
             _client?.Close();
@@ -66,14 +79,14 @@ namespace client
             var connTask = Task.Run(new Action(() => { 
             _client.Start(_endPoint, login, pass);
             }));
-            button_connect.Enabled = false;
-            Task.Run(new Action(() =>
-            {
-                while (connTask.Status == TaskStatus.Running);
-                button_connect.Enabled = !_client.IsConnected;
+            //button_connect.Enabled = false;
+            //Task.Run(new Action(() =>
+            //{
+            //    while (connTask.Status == TaskStatus.Running);
+            //    button_connect.Enabled = !_client.IsConnected;
 
-            }));
-  
+            //}));
+
         }
 
         private void button_ask_Click(object sender, EventArgs e)

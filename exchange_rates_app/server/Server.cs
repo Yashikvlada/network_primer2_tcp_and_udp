@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using System.Collections.ObjectModel;
 
 namespace server
 {
@@ -34,12 +35,13 @@ namespace server
             _requestsCount = 0;
 
             ++_server.CurrClCount;
-            _server.ConnectedUsers.Add(this);
+            //_server.ConnectedUsers.Add(this);
         }
         public void Disconnect()
         {
             _sw?.Close();
             _sr?.Close();
+            //_tcpClient?.Client?.Shutdown(SocketShutdown.Both);
             _isActive = false; 
         }
         private void Close()
@@ -55,6 +57,15 @@ namespace server
         {
             byte[] answBuff;
             _server.Log += $"User: {login} connecting...!";
+
+            if (IsUserAlreadyConnected(login))
+            {
+                _server.Log += $"User: {login} already connected!";
+                answBuff = Encoding.Unicode.GetBytes("User with your login is already connected!\r\n");
+                _sw.Write(answBuff, 0, answBuff.Length);
+                return false;
+            }
+
             if (!_server.IsLoginPassOk(login, pass))
             {
                 _server.Log += $"User: {login} wrong password or login!";
@@ -66,13 +77,27 @@ namespace server
             _sw.Write(answBuff, 0, answBuff.Length);
             return true;
         }
+        private bool IsUserAlreadyConnected(string login)
+        {
+            var connUsr = _server.ConnectedUsers
+                .Where(c => c._userName.Equals(login))
+                .ToList();
+
+            if (connUsr.Count() != 0)
+                return true;
+
+            return false;
+        }
         private bool CheckBlockList(string login)
         {
             byte[] answBuff;
             if (_server.IsUserInBlockList(login))
             {
                 _server.Log += $"User: {login} in block list!";
-                var timeExpired = _server.BlockedUsers[login];
+                var timeExpired = _server.BlockedUsers
+                    .Where(b => b.Key.Equals(login))
+                    .ElementAt(0).Value;
+
                 answBuff = Encoding.Unicode.GetBytes($"You are in block list [{timeExpired}]!\r\n");
                 _sw.Write(answBuff, 0, answBuff.Length);
                 return false;
@@ -119,6 +144,7 @@ namespace server
                     return;
 
                 _server.Log += $"User: {_userName} connected!";
+                _server.ConnectedUsers.Add(this);
                 //
                 byte[] answBuff;
 
@@ -142,16 +168,15 @@ namespace server
                         _server.Log += limit;
                         answBuff = Encoding.Unicode.GetBytes(limit + "\r\n");
                         _sw.Write(answBuff, 0, answBuff.Length);
-                        _server.BlockedUsers.Add(_userName, expire);
+                        _server.BlockedUsers.Add(new KeyValuePair<string, DateTime>(_userName, expire));
                         break;
                     }
-
-                    _server.Log += $"Client: {_userName} : {curr1} to {curr2}";
 
                     string answer = _server.CalcRates(curr1, curr2);
                     answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
                     _sw.Write(answBuff, 0, answBuff.Length);
                     ++_requestsCount;
+                    _server.Log += $"Client: {_userName} : {curr1} to {curr2}";
                     _server.Log += $"Answer: {curr1} - {curr2} : {answer}";
                 }
             }
@@ -164,9 +189,13 @@ namespace server
                 Close();
                 if (_server.MaxClCount > _server.CurrClCount)
                     _server.Log += $"Client {_userName} " +
-                        $"connection is over! Connected: {_server.CurrClCount}";
+                        $"connection is over! Now connected: {_server.CurrClCount}";
             }
 
+        }
+        public override string ToString()
+        {
+            return _userName;
         }
     }
     internal class ServerSide : INotifyPropertyChanged
@@ -179,6 +208,7 @@ namespace server
         // словарь валюта:курс к доллару (напр.: EUR:0,8)
         private Dictionary<string, float> _rates;
 
+        public bool IsListening { get; set; }
         public string Log
         {
             get => _log;
@@ -191,16 +221,16 @@ namespace server
                 }
             }
         }
-        // все кто сейчас подключены
-        public List<ClientHandle> ConnectedUsers { get; set; }
+        // все кто сейчас подключены        
+        public BindingList<ClientHandle> ConnectedUsers { get;set;}
         // сколько сейчас подключено
         public int CurrClCount { get; set; }
         // максимум одновременно подключенных
         public int MaxClCount { get; set; }
-        // база логинов и паролей
-        public Dictionary<string, string> UsersBase { get; set; }
+        // база логинов и паролей (лист а не словарь, тк привязывать удобнее к спискам)
+        public BindingList<KeyValuePair<string, string>> UsersBase { get; set; }
         // пользователи, которые превысили лимит запросов
-        public Dictionary<string, DateTime> BlockedUsers { get; set; }
+        public BindingList<KeyValuePair<string, DateTime>> BlockedUsers { get; set; }
         //макс количество запросов до блокировки
         public int MaxRequests { get; set; }
         // продолжительность блокировки (сек)
@@ -213,10 +243,11 @@ namespace server
             CurrClCount = 0;
             MaxRequests = maxRequests;
             BlockTime = blockTime;
-            ConnectedUsers = new List<ClientHandle>();
+            ConnectedUsers = new BindingList<ClientHandle>();
             _rates = new Dictionary<string, float>();
-            UsersBase = new Dictionary<string, string>();
-            BlockedUsers = new Dictionary<string, DateTime>();
+            UsersBase = new BindingList<KeyValuePair<string, string>>();
+            BlockedUsers = new BindingList<KeyValuePair<string, DateTime>>();
+            IsListening = false;
         }
 
         /// <summary>
@@ -246,8 +277,10 @@ namespace server
         }
         public void StartListen()
         {
+            IsListening = true;
             _listener?.Start();
-
+            Log += "Listening...";
+           
             while (true)
             {
                 //if (_maxClCount > CurrClCount)
@@ -264,42 +297,48 @@ namespace server
         public void StopServer()
         {
             DisconnectAll();
-            _listener?.Stop();
+            if (_listener != null){
+                IsListening = false;
+                _listener.Stop();
+                Log += "Server stoped!";
+            }            
         }
         public bool AddUserToBase(string login, string pass)
         {
-            if (UsersBase.ContainsKey(login))
+            if (UsersBase.Where(u => u.Key.Equals(login)).Count()!=0)
                 return false;
-
-            UsersBase.Add(login, pass);
+            
+            UsersBase.Add(new KeyValuePair<string, string> (login, pass));
             return true;
         }
-        public bool RemoveUserFromBase(string login)
+        public bool RemoveUserFromBase(string login, string pass)
         {
-            if (!UsersBase.ContainsKey(login))
+            if (!UsersBase.Contains(new KeyValuePair<string, string>(login, pass)))
                 return false;
 
-            UsersBase.Remove(login);
+            UsersBase.Remove(new KeyValuePair<string, string>(login, pass));
             return true;
         }
         public bool IsLoginPassOk(string login, string pass)
         {
-            if (UsersBase.ContainsKey(login))
-                return UsersBase[login].Equals(pass);
+            if (UsersBase.Contains(new KeyValuePair<string, string>(login, pass)))
+                return true;
 
             return false;
         }
         public bool IsUserInBlockList(string login)
         {
-            if (!BlockedUsers.ContainsKey(login))
+            var blkUsr = BlockedUsers.Where(b => b.Key.Equals(login));
+
+            if (blkUsr.Count() == 0)
                 return false;
 
-            DateTime expire = BlockedUsers[login];
+            DateTime expire = blkUsr.ElementAt(0).Value;
 
             if (expire >= DateTime.Now)
                 return true;
 
-            BlockedUsers.Remove(login);
+            BlockedUsers.Remove(blkUsr.ElementAt(0));
             return false;
 
         }

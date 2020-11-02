@@ -113,7 +113,7 @@
             this.textBox_login.Name = "textBox_login";
             this.textBox_login.Size = new System.Drawing.Size(205, 26);
             this.textBox_login.TabIndex = 7;
-            this.textBox_login.Text = "1";
+            this.textBox_login.Text = "yv";
             // 
             // textBox_password
             // 
@@ -122,7 +122,7 @@
             this.textBox_password.Name = "textBox_password";
             this.textBox_password.Size = new System.Drawing.Size(205, 26);
             this.textBox_password.TabIndex = 8;
-            this.textBox_password.Text = "1";
+            this.textBox_password.Text = "0000";
             // 
             // textBox_console
             // 

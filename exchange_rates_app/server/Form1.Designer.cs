@@ -34,6 +34,10 @@
             this.listBox_blockUsr = new System.Windows.Forms.ListBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage_allUsr = new System.Windows.Forms.TabPage();
+            this.label_addPass = new System.Windows.Forms.Label();
+            this.label_addLogin = new System.Windows.Forms.Label();
+            this.textBox_addLogin = new System.Windows.Forms.TextBox();
+            this.textBox_addPass = new System.Windows.Forms.TextBox();
             this.Delete = new System.Windows.Forms.Button();
             this.button_add = new System.Windows.Forms.Button();
             this.listBox_allUsr = new System.Windows.Forms.ListBox();
@@ -76,7 +80,7 @@
             this.textBox_console.Multiline = true;
             this.textBox_console.Name = "textBox_console";
             this.textBox_console.ReadOnly = true;
-            this.textBox_console.Size = new System.Drawing.Size(438, 653);
+            this.textBox_console.Size = new System.Drawing.Size(520, 653);
             this.textBox_console.TabIndex = 1;
             // 
             // button_stop
@@ -105,7 +109,7 @@
             this.tabControl1.Controls.Add(this.tabPage_allUsr);
             this.tabControl1.Controls.Add(this.tabPage_BlockUsr);
             this.tabControl1.Controls.Add(this.tabPage_connUsr);
-            this.tabControl1.Location = new System.Drawing.Point(680, 18);
+            this.tabControl1.Location = new System.Drawing.Point(763, 18);
             this.tabControl1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -114,6 +118,10 @@
             // 
             // tabPage_allUsr
             // 
+            this.tabPage_allUsr.Controls.Add(this.label_addPass);
+            this.tabPage_allUsr.Controls.Add(this.label_addLogin);
+            this.tabPage_allUsr.Controls.Add(this.textBox_addLogin);
+            this.tabPage_allUsr.Controls.Add(this.textBox_addPass);
             this.tabPage_allUsr.Controls.Add(this.Delete);
             this.tabPage_allUsr.Controls.Add(this.button_add);
             this.tabPage_allUsr.Controls.Add(this.listBox_allUsr);
@@ -125,6 +133,38 @@
             this.tabPage_allUsr.TabIndex = 0;
             this.tabPage_allUsr.Text = "All users";
             this.tabPage_allUsr.UseVisualStyleBackColor = true;
+            // 
+            // label_addPass
+            // 
+            this.label_addPass.AutoSize = true;
+            this.label_addPass.Location = new System.Drawing.Point(262, 506);
+            this.label_addPass.Name = "label_addPass";
+            this.label_addPass.Size = new System.Drawing.Size(67, 20);
+            this.label_addPass.TabIndex = 12;
+            this.label_addPass.Text = "Пароль";
+            // 
+            // label_addLogin
+            // 
+            this.label_addLogin.AutoSize = true;
+            this.label_addLogin.Location = new System.Drawing.Point(262, 465);
+            this.label_addLogin.Name = "label_addLogin";
+            this.label_addLogin.Size = new System.Drawing.Size(55, 20);
+            this.label_addLogin.TabIndex = 11;
+            this.label_addLogin.Text = "Логин";
+            // 
+            // textBox_addLogin
+            // 
+            this.textBox_addLogin.Location = new System.Drawing.Point(9, 462);
+            this.textBox_addLogin.Name = "textBox_addLogin";
+            this.textBox_addLogin.Size = new System.Drawing.Size(204, 26);
+            this.textBox_addLogin.TabIndex = 10;
+            // 
+            // textBox_addPass
+            // 
+            this.textBox_addPass.Location = new System.Drawing.Point(9, 503);
+            this.textBox_addPass.Name = "textBox_addPass";
+            this.textBox_addPass.Size = new System.Drawing.Size(204, 26);
+            this.textBox_addPass.TabIndex = 9;
             // 
             // Delete
             // 
@@ -145,6 +185,7 @@
             this.button_add.TabIndex = 7;
             this.button_add.Text = "Add user";
             this.button_add.UseVisualStyleBackColor = true;
+            this.button_add.Click += new System.EventHandler(this.button_add_Click);
             // 
             // listBox_allUsr
             // 
@@ -153,7 +194,7 @@
             this.listBox_allUsr.Location = new System.Drawing.Point(9, 9);
             this.listBox_allUsr.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.listBox_allUsr.Name = "listBox_allUsr";
-            this.listBox_allUsr.Size = new System.Drawing.Size(458, 504);
+            this.listBox_allUsr.Size = new System.Drawing.Size(458, 444);
             this.listBox_allUsr.TabIndex = 6;
             // 
             // tabPage_BlockUsr
@@ -289,7 +330,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1200, 692);
+            this.ClientSize = new System.Drawing.Size(1263, 692);
             this.Controls.Add(this.label_blockTime);
             this.Controls.Add(this.textBox_blockTime);
             this.Controls.Add(this.label_maxReq);
@@ -309,6 +350,7 @@
             this.Text = "Server";
             this.tabControl1.ResumeLayout(false);
             this.tabPage_allUsr.ResumeLayout(false);
+            this.tabPage_allUsr.PerformLayout();
             this.tabPage_BlockUsr.ResumeLayout(false);
             this.tabPage_connUsr.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -340,6 +382,10 @@
         private System.Windows.Forms.TextBox textBox_maxReq;
         private System.Windows.Forms.Label label_blockTime;
         private System.Windows.Forms.TextBox textBox_blockTime;
+        private System.Windows.Forms.Label label_addPass;
+        private System.Windows.Forms.Label label_addLogin;
+        private System.Windows.Forms.TextBox textBox_addLogin;
+        private System.Windows.Forms.TextBox textBox_addPass;
     }
 }
 
