@@ -67,7 +67,7 @@ namespace client
 
             string answ = _sr.ReadLine();
             Log += answ;
-            if (answ.Contains("Wrong password"))
+            if (answ.Contains("Wrong password")|| answ.Contains("already connected"))
                 return false;
 
             answ = _sr.ReadLine();
@@ -81,6 +81,7 @@ namespace client
         {
             try
             {
+                IsConnected = true;
                 _client = new TcpClient();                
 
                 _userName = login;
@@ -93,7 +94,7 @@ namespace client
                 if (!Auth(login, pass))
                     this.Close();
 
-                IsConnected = true;
+                
             }
             catch(Exception ex)
             {

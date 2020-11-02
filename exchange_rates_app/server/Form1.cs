@@ -35,11 +35,12 @@ namespace server
                     int.Parse(textBox_maxReq.Text),
                     int.Parse(textBox_blockTime.Text));
 
-                textBox_console.DataBindings.Add("Text", _server, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
-                listBox_connUsr.DataSource = _server.ConnectedUsers;
+                SetBindings();
 
                 //добавим тестового пользователя
-                _server.UsersBase.Add("yv", "0000");
+                _server.UsersBase.Add(new KeyValuePair<string,string>("yv","0000"));
+
+                
             }
             catch(Exception ex)
             {
@@ -50,7 +51,33 @@ namespace server
 
             this.FormClosed += Form_server_FormClosed;
         }
-
+        private void SetBindings()
+        {
+            //привязываем консоль
+            textBox_console.DataBindings.Add("Text", _server, "Log", false, DataSourceUpdateMode.OnPropertyChanged);
+            //привязываем списки (все пользователи, подключенные, заблокированные)
+            listBox_allUsr.DataSource = _server.UsersBase;
+            listBox_connUsr.DataSource = _server.ConnectedUsers;
+            listBox_blockUsr.DataSource = _server.BlockedUsers;
+            //привязываем контролы прямые
+            button_stop.DataBindings.Add("Enabled", _server, "IsListening", false, DataSourceUpdateMode.OnPropertyChanged);
+            //привязываем обратные контролы
+            AddReverseBinding(button_listen, "Enabled", _server, "IsListening");
+            AddReverseBinding(textBox_maxClients, "Enabled", _server, "IsListening");
+            AddReverseBinding(textBox_maxReq, "Enabled", _server, "IsListening");
+            AddReverseBinding(textBox_blockTime, "Enabled", _server, "IsListening");
+        }
+        private void AddReverseBinding(Control aim, string aimProp, object source, string sourceProp)
+        {
+            Binding bind = new Binding(aimProp, source, sourceProp);
+            bind.Parse += ReverseBoolProperty;
+            bind.Format += ReverseBoolProperty;
+            aim.DataBindings.Add(bind);
+        }
+        private void ReverseBoolProperty(object s, ConvertEventArgs e)
+        {
+            e.Value = !(bool)e.Value;
+        }
         private void Form_server_FormClosed(object sender, FormClosedEventArgs e)
         {
             _server?.StopServer();
@@ -63,8 +90,6 @@ namespace server
                 _server.Log += "Read rates...";              
                 _server.LoadRates("rates.txt");
 
-                _server.Log += "Listening...";
-
                 Task.Run(new Action(() =>
                 {
                     _server.StartListen();
@@ -74,14 +99,14 @@ namespace server
             {
                 _server.Log += ex.Message;
                 _server.Log += "Server is stoped!";
-                _server?.StopServer();
+                _server.StopServer();
             }
             
         }
 
         private void button_stop_Click(object sender, EventArgs e)
         {
-            _server?.StopServer();
+            _server.StopServer();
         }
 
         private void textBox_maxClients_TextChanged(object sender, EventArgs e)
@@ -123,6 +148,23 @@ namespace server
                 MessageBox.Show("Длительность блокировки должна быть положительным числом!");
                 textBox_blockTime.Text = "60";
             }
+        }
+
+        private void button_add_Click(object sender, EventArgs e)
+        {
+            string newLogin = textBox_addLogin.Text;
+            string newPass = textBox_addPass.Text;
+
+            if (newLogin.Equals(string.Empty)||
+                newPass.Equals(string.Empty))
+            {
+                MessageBox.Show("Введите логин и пароль!");
+                return;
+            }
+
+            if (!_server.AddUserToBase(newLogin, newPass))
+                MessageBox.Show("Такой пользователь уже есть в базе!");
+
         }
     }
 }
