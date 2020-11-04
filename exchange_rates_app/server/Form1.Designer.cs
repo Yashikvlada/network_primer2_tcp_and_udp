@@ -175,6 +175,7 @@
             this.Delete.TabIndex = 8;
             this.Delete.Text = "Delete user";
             this.Delete.UseVisualStyleBackColor = true;
+            this.Delete.Click += new System.EventHandler(this.Delete_Click);
             // 
             // button_add
             // 

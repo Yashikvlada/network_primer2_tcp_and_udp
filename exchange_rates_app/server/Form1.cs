@@ -167,5 +167,15 @@ namespace server
                 MessageBox.Show("Такой пользователь уже есть в базе!");
 
         }
+
+        private void Delete_Click(object sender, EventArgs e)
+        {
+            var selectedInd = listBox_allUsr.SelectedIndex;
+            if (selectedInd == -1)
+                return;
+
+            var delUser = (KeyValuePair<string, string>)listBox_allUsr.Items[selectedInd];
+            _server.UsersBase.Remove(delUser);
+        }
     }
 }
