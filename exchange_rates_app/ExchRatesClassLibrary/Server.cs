@@ -7,178 +7,91 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
-using System.Windows.Forms;
-using System.Windows.Threading;
-using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
-namespace server
+namespace ExchRatesClassLibrary
 {
-    internal class ClientHandle
+    public class ClientHost:AbsClient
     {
-        private TcpClient _tcpClient;
         private ServerSide _server;
-
-        private NetworkStream _sw;
-        private StreamReader _sr;
-        private string _userName;
-        private bool _isActive;
         private int _requestsCount;
-        public ClientHandle(TcpClient client, ServerSide server)
+
+        public ClientHost(TcpClient client, ServerSide server)
         {
-            _tcpClient = client;
+            _client = client;
             _server = server;
             _sw = null;
             _sr = null;
-            _isActive = true;
+            _isConnected = true;
             _requestsCount = 0;
 
             ++_server.CurrClCount;
-            //_server.ConnectedUsers.Add(this);
         }
+        // разъединяем соединение (соккет еще есть)
         public void Disconnect()
         {
             _sw?.Close();
             _sr?.Close();
-            //_tcpClient?.Client?.Shutdown(SocketShutdown.Both);
-            _isActive = false; 
+            _isConnected = false;
         }
         private void Close()
         {
-            _sw?.Close();
-            _sr?.Close();
+            Disconnect();
 
-            _tcpClient?.Close();
+            _client?.Close();
             --_server.CurrClCount;
             _server.ConnectedUsers.Remove(this);
         }
-        private bool CheckLoginPass(string login, string pass)
+        private void ReadWriteCycle()
         {
             byte[] answBuff;
-            _server.Log += $"User: {login} connecting...!";
 
-            if (IsUserAlreadyConnected(login))
+            while (_isConnected)
             {
-                _server.Log += $"User: {login} already connected!";
-                answBuff = Encoding.Unicode.GetBytes("User with your login is already connected!\r\n");
+                string curr1 = _sr.ReadLine();
+                string curr2 = _sr.ReadLine();
+
+                if (_requestsCount >= _server.MaxRequests)
+                {
+                    DateTime expire = DateTime.Now.AddSeconds(_server.BlockTime);
+                    string limit = $"Client: {UserName} requests {_requestsCount} / {_server.MaxRequests}. " +
+                        $"Blocked till: {expire}!";
+
+                    _server.Log += limit;
+                    answBuff = Encoding.Unicode.GetBytes(limit + "\r\n");
+                    _sw.Write(answBuff, 0, answBuff.Length);
+                    _server.BlockedUsers.Add(new KeyValuePair<string, DateTime>(UserName, expire));
+                    break;
+                }
+
+                string answer = _server.CalcRates(curr1, curr2);
+                answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
                 _sw.Write(answBuff, 0, answBuff.Length);
-                return false;
+                ++_requestsCount;
+                _server.Log += $"Client: {UserName} : {curr1} to {curr2}";
+                _server.Log += $"Answer: {curr1} - {curr2} : {answer}";
             }
-
-            if (!_server.IsLoginPassOk(login, pass))
-            {
-                _server.Log += $"User: {login} wrong password or login!";
-                answBuff = Encoding.Unicode.GetBytes("Wrong password or login!\r\n");
-                _sw.Write(answBuff, 0, answBuff.Length);
-                return false;
-            }
-            answBuff = Encoding.Unicode.GetBytes("Password checked!\r\n");
-            _sw.Write(answBuff, 0, answBuff.Length);
-            return true;
-        }
-        private bool IsUserAlreadyConnected(string login)
-        {
-            var connUsr = _server.ConnectedUsers
-                .Where(c => c._userName.Equals(login))
-                .ToList();
-
-            if (connUsr.Count() != 0)
-                return true;
-
-            return false;
-        }
-        private bool CheckBlockList(string login)
-        {
-            byte[] answBuff;
-            if (_server.IsUserInBlockList(login))
-            {
-                _server.Log += $"User: {login} in block list!";
-                var timeExpired = _server.BlockedUsers
-                    .Where(b => b.Key.Equals(login))
-                    .ElementAt(0).Value;
-
-                answBuff = Encoding.Unicode.GetBytes($"You are in block list [{timeExpired}]!\r\n");
-                _sw.Write(answBuff, 0, answBuff.Length);
-                return false;
-            }
-            answBuff = Encoding.Unicode.GetBytes($"Server is ready to work. Enter request pls!\r\n");
-            _sw.Write(answBuff, 0, answBuff.Length);
-
-            return true;
-        }
-        private bool CheckMaxClients(string login)
-        {
-            byte[] answBuff;
-            if (_server.CurrClCount > _server.MaxClCount)
-            {
-                _server.Log += $"User: {_tcpClient.Client.RemoteEndPoint} denied (already max clients)!";
-                answBuff = Encoding.Unicode.GetBytes($"Server is not available. Try to connect later pls!\r\n");
-                _sw.Write(answBuff, 0, answBuff.Length);
-                return false;
-            }
-            answBuff = Encoding.Unicode.GetBytes($"Server is available!\r\n");
-            _sw.Write(answBuff, 0, answBuff.Length);
-
-            return true;
         }
         public void StartClientLoop()
         {
-            if (_tcpClient == null)
-                throw new NullReferenceException("Can`t start client loop! TcpClient is empty!");
-
             try
             {
-                _sw = _tcpClient.GetStream();
-                _sr = new StreamReader(_tcpClient.GetStream(), Encoding.Unicode);
-                //
-                if (!CheckMaxClients(_userName))
+                _sw = _client.GetStream();
+                _sr = new StreamReader(_client.GetStream(), Encoding.Unicode);
+
+                Authorization _auth = new ServerAuth(_sw, _sr, _server);
+                bool auth = _auth.MakeAuthTemplate();
+                _server.Log += _auth.AuthInfo;
+
+                if (auth == false)
                     return;
 
-                _userName = _sr.ReadLine();
-                string pass = _sr.ReadLine();
+                UserName = _auth.Login;
 
-                if (!CheckLoginPass(_userName, pass))
-                    return;
-                if (!CheckBlockList(_userName))
-                    return;
-
-                _server.Log += $"User: {_userName} connected!";
                 _server.ConnectedUsers.Add(this);
-                //
-                byte[] answBuff;
-
-                while (_isActive)
-                {
-                    string curr1 = _sr.ReadLine();
-                    string curr2 = _sr.ReadLine();
-
-                    //if (msgFromClient.Contains("<QUIT>"))
-                    //{
-                    //    Console.WriteLine($"Client: {_userName} is disconnected!");
-                    //    break;
-                    //}
-
-                    if (_requestsCount >= _server.MaxRequests)
-                    {
-                        DateTime expire = DateTime.Now.AddSeconds(_server.BlockTime);
-                        string limit = $"Client: {_userName} requests {_requestsCount} / {_server.MaxRequests}. " +
-                            $"Blocked till: {expire}!";
-
-                        _server.Log += limit;
-                        answBuff = Encoding.Unicode.GetBytes(limit + "\r\n");
-                        _sw.Write(answBuff, 0, answBuff.Length);
-                        _server.BlockedUsers.Add(new KeyValuePair<string, DateTime>(_userName, expire));
-                        break;
-                    }
-
-                    string answer = _server.CalcRates(curr1, curr2);
-                    answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
-                    _sw.Write(answBuff, 0, answBuff.Length);
-                    ++_requestsCount;
-                    _server.Log += $"Client: {_userName} : {curr1} to {curr2}";
-                    _server.Log += $"Answer: {curr1} - {curr2} : {answer}";
-                }
+                
+                ReadWriteCycle();
             }
             catch (Exception ex)
             {
@@ -188,27 +101,40 @@ namespace server
             {
                 Close();
                 if (_server.MaxClCount > _server.CurrClCount)
-                    _server.Log += $"Client {_userName} " +
+                    _server.Log += $"Client {UserName} " +
                         $"connection is over! Now connected: {_server.CurrClCount}";
             }
 
         }
         public override string ToString()
         {
-            return _userName;
+            return UserName;
         }
     }
-    internal class ServerSide : INotifyPropertyChanged
+
+    public class ServerSide : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
         private string _log;
         private TcpListener _listener;
+        private bool _isListening;
 
         // словарь валюта:курс к доллару (напр.: EUR:0,8)
         private Dictionary<string, float> _rates;
 
-        public bool IsListening { get; set; }
+        public bool IsListening
+        {
+            get => _isListening;
+            set
+            {
+                if (value != _isListening)
+                {
+                    _isListening = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
         public string Log
         {
             get => _log;
@@ -222,7 +148,7 @@ namespace server
             }
         }
         // все кто сейчас подключены        
-        public BindingList<ClientHandle> ConnectedUsers { get;set;}
+        public BindingList<ClientHost> ConnectedUsers { get; set; }
         // сколько сейчас подключено
         public int CurrClCount { get; set; }
         // максимум одновременно подключенных
@@ -235,7 +161,6 @@ namespace server
         public int MaxRequests { get; set; }
         // продолжительность блокировки (сек)
         public int BlockTime { get; }
-
         public ServerSide(IPEndPoint ep, int maxClCount, int maxRequests, int blockTime)
         {
             _listener = new TcpListener(ep);
@@ -243,7 +168,7 @@ namespace server
             CurrClCount = 0;
             MaxRequests = maxRequests;
             BlockTime = blockTime;
-            ConnectedUsers = new BindingList<ClientHandle>();
+            ConnectedUsers = new BindingList<ClientHost>();
             _rates = new Dictionary<string, float>();
             UsersBase = new BindingList<KeyValuePair<string, string>>();
             BlockedUsers = new BindingList<KeyValuePair<string, DateTime>>();
@@ -280,35 +205,35 @@ namespace server
             IsListening = true;
             _listener?.Start();
             Log += "Listening...";
-           
+
             while (true)
             {
-                //if (_maxClCount > CurrClCount)
-                //{
+                //при _listener.Stop(); вылетит исключение которое остановит этот цикл
                 TcpClient client = _listener.AcceptTcpClient();
-
-                ClientHandle clHandle = new ClientHandle(client, this);
+                ClientHost clHandle = new ClientHost(client, this);
 
                 Thread clThread = new Thread(new ThreadStart(clHandle.StartClientLoop));
                 clThread.Start();
-                //}
+
             }
+
         }
         public void StopServer()
         {
             DisconnectAll();
-            if (_listener != null){
+            if (_listener != null)
+            {
                 IsListening = false;
                 _listener.Stop();
                 Log += "Server stoped!";
-            }            
+            }
         }
         public bool AddUserToBase(string login, string pass)
         {
-            if (UsersBase.Where(u => u.Key.Equals(login)).Count()!=0)
+            if (UsersBase.Where(u => u.Key.Equals(login)).Count() != 0)
                 return false;
-            
-            UsersBase.Add(new KeyValuePair<string, string> (login, pass));
+
+            UsersBase.Add(new KeyValuePair<string, string>(login, pass));
             return true;
         }
         public bool RemoveUserFromBase(string login, string pass)
@@ -342,6 +267,25 @@ namespace server
             return false;
 
         }
+        public bool IsUserAlreadyConnected(string login)
+        {
+            var connUsr = ConnectedUsers
+                .Where(c => c.UserName.Equals(login))
+                .ToList();
+
+            if (connUsr.Count() != 0)
+                return true;
+
+            return false;
+        }
+        public DateTime GetUserBlockTime(string login)
+        {
+            var timeExpired = BlockedUsers
+                    .Where(b => b.Key.Equals(login))
+                    .ElementAt(0).Value;
+
+            return timeExpired;
+        }
         public string CalcRates(string curr1, string curr2)
         {
 
@@ -370,5 +314,4 @@ namespace server
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
 }

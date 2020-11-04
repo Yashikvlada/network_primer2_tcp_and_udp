@@ -11,12 +11,13 @@ using System.Net.Sockets;
 using System.Net;
 using System.Configuration;
 using System.IO;
+using ExchRatesClassLibrary;
 
 namespace client
 {
     public partial class Form_client : Form
     {
-        private ClientSide _client;
+        private Client _client;
         private IPEndPoint _endPoint;
         public Form_client()
         {
@@ -29,7 +30,7 @@ namespace client
 
                 _endPoint = new IPEndPoint(IPAddress.Parse(server_ip), int.Parse(server_port));
 
-                _client = new ClientSide();
+                _client = new Client();
 
                 SetBindings();               
             }
