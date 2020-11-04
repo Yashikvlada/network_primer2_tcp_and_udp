@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace ExchRatesClassLibrary
 {
+    //шаблон авторизации MakeAuthTemplate()
+    //чтобы у сервера и клиента была одинаковая последовательность действий
     abstract public class Authorization
     {
         protected const string SERVER_OFF = "Server is not avaible!";
@@ -72,7 +74,6 @@ namespace ExchRatesClassLibrary
 
             return true;
         }
-
         protected override bool IsLoginPassOk()
         {
             byte[] answBuff;
@@ -92,7 +93,6 @@ namespace ExchRatesClassLibrary
             _sw.Write(answBuff, 0, answBuff.Length);
             return true;
         }
-
         protected override bool IsUserAlreadyConnected()
         {
             byte[] answBuff;
@@ -108,7 +108,6 @@ namespace ExchRatesClassLibrary
 
             return false;
         }
-
         protected override bool IsUserInBlockList()
         {
             byte[] answBuff;
@@ -127,7 +126,6 @@ namespace ExchRatesClassLibrary
             return false;
         }
     }
-
     public class ClientAuth : Authorization
     {
         public ClientAuth(string login, string pass, NetworkStream sw, StreamReader sr) 

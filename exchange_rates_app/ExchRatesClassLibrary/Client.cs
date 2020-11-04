@@ -20,7 +20,7 @@ namespace ExchRatesClassLibrary
 
         public string UserName { get; set; }
     }
-
+    // клиентская сторона (потоки всегда открыты)
     public class Client : AbsClient, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -50,7 +50,7 @@ namespace ExchRatesClassLibrary
                 }
             }
         }
-        
+               
         public void Start(IPEndPoint ep, string login, string pass)
         {
             try
@@ -59,7 +59,7 @@ namespace ExchRatesClassLibrary
                 _client = new TcpClient();
 
                 UserName = login;
-                Log += "Trying to connect...";
+                Log += "Connection attempt...";
                 _client.Connect(ep);
 
                 _sw = _client.GetStream();

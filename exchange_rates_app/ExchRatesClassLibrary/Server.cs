@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace ExchRatesClassLibrary
 {
+    // обработчик клиента на сервере (каждый нужно запускать в новом потоке)
     public class ClientHost:AbsClient
     {
         private ServerSide _server;
@@ -35,44 +36,6 @@ namespace ExchRatesClassLibrary
             _sr?.Close();
             _isConnected = false;
         }
-        private void Close()
-        {
-            Disconnect();
-
-            _client?.Close();
-            --_server.CurrClCount;
-            _server.ConnectedUsers.Remove(this);
-        }
-        private void ReadWriteCycle()
-        {
-            byte[] answBuff;
-
-            while (_isConnected)
-            {
-                string curr1 = _sr.ReadLine();
-                string curr2 = _sr.ReadLine();
-
-                if (_requestsCount >= _server.MaxRequests)
-                {
-                    DateTime expire = DateTime.Now.AddSeconds(_server.BlockTime);
-                    string limit = $"Client: {UserName} requests {_requestsCount} / {_server.MaxRequests}. " +
-                        $"Blocked till: {expire}!";
-
-                    _server.Log += limit;
-                    answBuff = Encoding.Unicode.GetBytes(limit + "\r\n");
-                    _sw.Write(answBuff, 0, answBuff.Length);
-                    _server.BlockedUsers.Add(new KeyValuePair<string, DateTime>(UserName, expire));
-                    break;
-                }
-
-                string answer = _server.CalcRates(curr1, curr2);
-                answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
-                _sw.Write(answBuff, 0, answBuff.Length);
-                ++_requestsCount;
-                _server.Log += $"Client: {UserName} : {curr1} to {curr2}";
-                _server.Log += $"Answer: {curr1} - {curr2} : {answer}";
-            }
-        }
         public void StartClientLoop()
         {
             try
@@ -90,7 +53,7 @@ namespace ExchRatesClassLibrary
                 UserName = _auth.Login;
 
                 _server.ConnectedUsers.Add(this);
-                
+
                 ReadWriteCycle();
             }
             catch (Exception ex)
@@ -101,11 +64,58 @@ namespace ExchRatesClassLibrary
             {
                 Close();
                 if (_server.MaxClCount > _server.CurrClCount)
-                    _server.Log += $"Client {UserName} " +
+                    _server.Log += $"Client [{UserName}] " +
                         $"connection is over! Now connected: {_server.CurrClCount}";
             }
 
+        }       
+        private void ReadWriteCycle()
+        {
+            byte[] answBuff;
+
+            while (_isConnected)
+            {
+                string curr1 = _sr.ReadLine();
+                string curr2 = _sr.ReadLine();
+
+                if (IsMaxRequests())
+                    break;
+
+                string answer = _server.CalcRates(curr1, curr2);
+                answBuff = Encoding.Unicode.GetBytes(answer + "\r\n");
+                _sw.Write(answBuff, 0, answBuff.Length);
+                ++_requestsCount;
+                _server.Log += $"Client: {UserName} : {curr1} to {curr2}";
+                _server.Log += $"Answer: {curr1} - {curr2} : {answer}";
+            }
         }
+        private bool IsMaxRequests()
+        {
+            if (_requestsCount < _server.MaxRequests)
+                return false;
+
+            byte[] answBuff;
+
+            DateTime expire = DateTime.Now.AddSeconds(_server.BlockTime);
+            string limit = $"Client: {UserName} requests {_requestsCount} / {_server.MaxRequests}. " +
+                $"Blocked till: {expire}!";
+
+            _server.Log += limit;
+            answBuff = Encoding.Unicode.GetBytes(limit + "\r\n");
+            _sw.Write(answBuff, 0, answBuff.Length);
+            _server.BlockedUsers.Add(new KeyValuePair<string, DateTime>(UserName, expire));
+
+            return true;
+        }
+        private void Close()
+        {
+            Disconnect();
+
+            _client?.Close();
+            --_server.CurrClCount;
+            _server.ConnectedUsers.Remove(this);
+        }
+        // чтобы можно было использовать массив клиентов в ListBox корректно
         public override string ToString()
         {
             return UserName;
@@ -208,7 +218,8 @@ namespace ExchRatesClassLibrary
 
             while (true)
             {
-                //при _listener.Stop(); вылетит исключение которое остановит этот цикл
+                //при _listener.Stop(); вылетит исключение которое остановит AcceptTcpClient 
+                //и прервет этот поток
                 TcpClient client = _listener.AcceptTcpClient();
                 ClientHost clHandle = new ClientHost(client, this);
 
@@ -225,7 +236,7 @@ namespace ExchRatesClassLibrary
             {
                 IsListening = false;
                 _listener.Stop();
-                Log += "Server stoped!";
+                Log += "Server stopped!";
             }
         }
         public bool AddUserToBase(string login, string pass)
